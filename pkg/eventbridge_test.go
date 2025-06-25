@@ -13,7 +13,7 @@ import (
 
 type testPromtailClient struct{}
 
-func (t testPromtailClient) sendToPromtail(ctx context.Context, b *batch) error {
+func (t testPromtailClient) sendToPromtail(_ context.Context, _ *batch) error {
 	return nil
 }
 
@@ -26,7 +26,7 @@ func Test_processEventBridgeEvent(t *testing.T) {
 		var ebEvent events.CloudWatchEvent
 		require.NoError(t, json.Unmarshal(bs, &ebEvent))
 
-		processor := s3EventProcessor(func(ctx context.Context, ev *events.S3Event, pc Client, log *log.Logger) error {
+		processor := s3EventProcessor(func(_ context.Context, ev *events.S3Event, _ Client, _ *log.Logger) error {
 			require.Len(t, ev.Records, 1)
 			require.Equal(t, events.S3EventRecord{
 				AWSRegion: "us-east-2",
@@ -46,14 +46,14 @@ func Test_processEventBridgeEvent(t *testing.T) {
 		require.NoError(t, err)
 
 		t.Run("s3 object created event", func(t *testing.T) {
-			var ebEvent = events.CloudWatchEvent{
+			ebEvent := events.CloudWatchEvent{
 				Source: "aws.s3",
 				// picking a different s3 event type
 				// https://docs.aws.amazon.com/AmazonS3/latest/userguide/ev-mapping-troubleshooting.html
 				DetailType: "Object Restore Initiated",
 			}
 
-			processor := s3EventProcessor(func(ctx context.Context, ev *events.S3Event, pc Client, log *log.Logger) error {
+			processor := s3EventProcessor(func(_ context.Context, _ *events.S3Event, _ Client, _ *log.Logger) error {
 				return nil
 			})
 

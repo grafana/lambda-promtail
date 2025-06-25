@@ -22,7 +22,7 @@ func ReadJSONFromFile(t *testing.T, inputFile string) []byte {
 }
 
 func TestLambdaPromtail_KinesisParseEvents(t *testing.T) {
-	inputJson, err := os.ReadFile("../testdata/kinesis-event.json")
+	inputJSON, err := os.ReadFile("../testdata/kinesis-event.json")
 	mockBatch := &batch{
 		streams: map[string]*logproto.Stream{},
 	}
@@ -32,7 +32,7 @@ func TestLambdaPromtail_KinesisParseEvents(t *testing.T) {
 	}
 
 	var testEvent events.KinesisEvent
-	if err := json.Unmarshal(inputJson, &testEvent); err != nil {
+	if err := json.Unmarshal(inputJSON, &testEvent); err != nil {
 		t.Errorf("could not unmarshal event. details: %v", err)
 	}
 

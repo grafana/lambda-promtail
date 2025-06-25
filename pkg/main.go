@@ -38,7 +38,7 @@ var (
 	s3Clients                                                                map[string]*s3.Client
 	extraLabels                                                              model.LabelSet
 	dropLabels                                                               []model.LabelName
-	skipTlsVerify                                                            bool
+	skipTLSVerify                                                            bool
 	printLogLine                                                             bool
 	relabelConfigs                                                           []*relabel.Config
 )
@@ -82,10 +82,10 @@ func setupArguments() {
 		panic("both username and bearerToken are not allowed")
 	}
 
-	skipTls := os.Getenv("SKIP_TLS_VERIFY")
+	skipTLS := os.Getenv("SKIP_TLS_VERIFY")
 	// Anything other than case-insensitive 'true' is treated as 'false'.
-	if strings.EqualFold(skipTls, "true") {
-		skipTlsVerify = true
+	if strings.EqualFold(skipTLS, "true") {
+		skipTLSVerify = true
 	}
 
 	tenantID = os.Getenv("TENANT_ID")
@@ -236,7 +236,10 @@ func checkEventType(ev map[string]interface{}) (interface{}, error) {
 			return t, nil
 		}
 
-		reader.Seek(0, 0)
+		_, err = reader.Seek(0, 0)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return nil, fmt.Errorf("unknown event type")
@@ -256,21 +259,21 @@ func handler(ctx context.Context, ev map[string]interface{}) error {
 		},
 		http: &httpClientConfig{
 			timeout:       timeout,
-			skipTlsVerify: skipTlsVerify,
+			skipTLSVerify: skipTLSVerify,
 		},
 	}, log)
 
 	event, err := checkEventType(ev)
 	if err != nil {
-		level.Error(*pClient.log).Log("err", fmt.Errorf("invalid event: %s", ev))
+		level.Error(*log).Log("err", fmt.Errorf("invalid event: %s", ev)) // nolint:errcheck
 		return err
 	}
 
 	switch evt := event.(type) {
 	case *events.CloudWatchEvent:
-		err = processEventBridgeEvent(ctx, evt, pClient, pClient.log, processS3Event)
+		err = processEventBridgeEvent(ctx, evt, pClient, log, processS3Event)
 	case *events.S3Event:
-		err = processS3Event(ctx, evt, pClient, pClient.log)
+		err = processS3Event(ctx, evt, pClient, log)
 	case *events.CloudwatchLogsEvent:
 		err = processCWEvent(ctx, evt, pClient)
 	case *events.KinesisEvent:
@@ -285,7 +288,7 @@ func handler(ctx context.Context, ev map[string]interface{}) error {
 	}
 
 	if err != nil {
-		level.Error(*pClient.log).Log("err", fmt.Errorf("error processing event: %v", err))
+		level.Error(*log).Log("err", fmt.Errorf("error processing event: %v", err)) // nolint:errcheck
 	}
 	return err
 }

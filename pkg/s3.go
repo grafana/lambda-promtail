@@ -42,15 +42,15 @@ type parserConfig struct {
 }
 
 const (
-	FLOW_LOG_TYPE              string = "vpcflowlogs"
-	LB_LOG_TYPE                string = "elasticloadbalancing"
-	CLOUDTRAIL_LOG_TYPE        string = "CloudTrail"
-	CLOUDTRAIL_DIGEST_LOG_TYPE string = "CloudTrail-Digest"
-	CLOUDFRONT_LOG_TYPE        string = "cloudfront"
-	LB_NLB_TYPE                string = "net"
-	LB_ALB_TYPE                string = "app"
-	WAF_LOG_TYPE               string = "WAFLogs"
-	GUARDDUTY_LOG_TYPE         string = "GuardDuty"
+	FlowLogType             string = "vpcflowlogs"
+	LbLogType               string = "elasticloadbalancing"
+	CloudTrailLogType       string = "CloudTrail"
+	CloudTrailDigestLogType string = "CloudTrail-Digest"
+	CloudFrontLogType       string = "cloudfront"
+	LbNlbType               string = "net"
+	LbAlbType               string = "app"
+	WafLogType              string = "WAFLogs"
+	GuardDutyLogType        string = "GuardDuty"
 )
 
 var (
@@ -89,7 +89,7 @@ var (
 	wafTimestampRegex        = regexp.MustCompile(`"timestamp":\s*(?P<timestamp>\d+),`)
 	guarddutyFilenameRegex   = regexp.MustCompile(`AWSLogs\/(?P<account_id>\d+)\/(?P<type>GuardDuty)\/(?P<region>[\w-]+)\/(?P<year>\d+)\/(?P<month>\d+)\/(?P<day>\d+)\/.+`)
 	parsers                  = map[string]parserConfig{
-		FLOW_LOG_TYPE: {
+		FlowLogType: {
 			logTypeLabel:    "s3_vpc_flow",
 			filenameRegex:   defaultFilenameRegex,
 			ownerLabelKey:   "account_id",
@@ -98,7 +98,7 @@ var (
 			timestampType:   "string",
 			skipHeaderCount: 1,
 		},
-		LB_LOG_TYPE: {
+		LbLogType: {
 			logTypeLabel:    "s3_lb",
 			filenameRegex:   defaultFilenameRegex,
 			ownerLabelKey:   "account_id",
@@ -106,13 +106,13 @@ var (
 			timestampRegex:  defaultTimestampRegex,
 			timestampType:   "string",
 		},
-		CLOUDTRAIL_LOG_TYPE: {
+		CloudTrailLogType: {
 			logTypeLabel:    "s3_cloudtrail",
 			ownerLabelKey:   "account_id",
 			skipHeaderCount: 3,
 			filenameRegex:   cloudtrailFilenameRegex,
 		},
-		CLOUDFRONT_LOG_TYPE: {
+		CloudFrontLogType: {
 			logTypeLabel:    "s3_cloudfront",
 			filenameRegex:   cloudfrontFilenameRegex,
 			ownerLabelKey:   "prefix",
@@ -121,14 +121,14 @@ var (
 			timestampType:   "string",
 			skipHeaderCount: 2,
 		},
-		WAF_LOG_TYPE: {
+		WafLogType: {
 			logTypeLabel:   "s3_waf",
 			filenameRegex:  wafFilenameRegex,
 			ownerLabelKey:  "account_id",
 			timestampRegex: wafTimestampRegex,
 			timestampType:  "unix",
 		},
-		GUARDDUTY_LOG_TYPE: {
+		GuardDutyLogType: {
 			logTypeLabel:    "s3_guardduty",
 			filenameRegex:   guarddutyFilenameRegex,
 			ownerLabelKey:   "account_id",
@@ -158,7 +158,7 @@ func getS3Client(ctx context.Context, region string) (*s3.Client, error) {
 func parseS3Log(ctx context.Context, b *batch, labels map[string]string, obj io.ReadCloser, log *log.Logger) error {
 	parser, ok := parsers[labels["type"]]
 	if !ok {
-		if labels["type"] == CLOUDTRAIL_DIGEST_LOG_TYPE {
+		if labels["type"] == CloudTrailDigestLogType {
 			return nil
 		}
 		return fmt.Errorf("could not find parser for type %s", labels["type"])
@@ -179,7 +179,7 @@ func parseS3Log(ctx context.Context, b *batch, labels map[string]string, obj io.
 	ls = applyLabels(ls)
 
 	// extract the timestamp of the nested event and sends the rest as raw json
-	if labels["type"] == CLOUDTRAIL_LOG_TYPE || labels["type"] == GUARDDUTY_LOG_TYPE {
+	if labels["type"] == CloudTrailLogType || labels["type"] == GuardDutyLogType {
 		records := make(chan Record)
 		jsonStream := NewJSONStream(records)
 		go jsonStream.Start(gzreader, parser.skipHeaderCount)
@@ -213,7 +213,7 @@ func parseS3Log(ctx context.Context, b *batch, labels map[string]string, obj io.
 		timestamp := time.Now()
 		match := parser.timestampRegex.FindStringSubmatch(logLine)
 		if len(match) > 0 {
-			if labels["lb_type"] == LB_NLB_TYPE {
+			if labels["lb_type"] == LbNlbType {
 				// NLB logs don't have .SSSSSSZ suffix. RFC3339 requires a TZ specifier, use UTC
 				match[1] += "Z"
 			}
@@ -231,7 +231,7 @@ func parseS3Log(ctx context.Context, b *batch, labels map[string]string, obj io.
 				}
 				timestamp = time.Unix(sec, nsec).UTC()
 			default:
-				level.Warn(*log).Log("msg", fmt.Sprintf("timestamp type of %s parser unknown, using current time", labels["type"]))
+				level.Warn(*log).Log("msg", fmt.Sprintf("timestamp type of %s parser unknown, using current time", labels["type"])) // nolint:errcheck
 			}
 		}
 
@@ -247,7 +247,6 @@ func parseS3Log(ctx context.Context, b *batch, labels map[string]string, obj io.
 }
 
 func getLabels(record events.S3EventRecord) (map[string]string, error) {
-
 	labels := make(map[string]string)
 
 	labels["key"] = record.S3.Object.Key
@@ -283,7 +282,7 @@ func processS3Event(ctx context.Context, ev *events.S3Event, pc Client, log *log
 		if err != nil {
 			return err
 		}
-		level.Info(*log).Log("msg", fmt.Sprintf("fetching s3 file: %s", labels["key"]))
+		level.Info(*log).Log("msg", fmt.Sprintf("fetching s3 file: %s", labels["key"])) // nolint:errcheck
 		s3Client, err := getS3Client(ctx, labels["bucket_region"])
 		if err != nil {
 			return err
@@ -364,8 +363,8 @@ func stringToRawEvent(body string) (map[string]interface{}, error) {
 //	nsec = 123000000  // this is the nanoseconds part of the Unix time
 func getUnixSecNsec(s string) (sec int64, nsec int64, err error) {
 	const (
-		UNIX_SEC_LOG10     = 9
-		UNIX_NANOSEC_LOG10 = 8
+		UnixSecLog10      = 9
+		UunixNanosecLog10 = 8
 	)
 
 	i, err := strconv.ParseInt(s, 10, 64)
@@ -374,7 +373,7 @@ func getUnixSecNsec(s string) (sec int64, nsec int64, err error) {
 	}
 
 	iLog10 := int(math.Log10(float64(i)))
-	multiplier := math.Pow10(UNIX_SEC_LOG10 - iLog10)
+	multiplier := math.Pow10(UnixSecLog10 - iLog10)
 	sec = int64(float64(i) * multiplier)
 
 	fractionalSec := float64(i % sec)
@@ -383,7 +382,7 @@ func getUnixSecNsec(s string) (sec int64, nsec int64, err error) {
 	}
 
 	fractionalSecLog10 := int(math.Log10(fractionalSec))
-	multiplier = math.Pow10(UNIX_NANOSEC_LOG10 - fractionalSecLog10)
+	multiplier = math.Pow10(UunixNanosecLog10 - fractionalSecLog10)
 	nsec = int64(fractionalSec * multiplier)
 
 	return sec, nsec, err

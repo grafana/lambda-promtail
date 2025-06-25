@@ -21,9 +21,9 @@ func parseCloudtrailRecord(record Record) (logproto.Entry, error) {
 		time, err := time.Parse(time.RFC3339, val.(string))
 		if err != nil {
 			return logproto.Entry{}, err
-		} else {
-			timestamp = time
 		}
+
+		timestamp = time
 	}
 	return logproto.Entry{
 		Line:      string(document),

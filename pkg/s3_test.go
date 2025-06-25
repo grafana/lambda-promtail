@@ -52,9 +52,9 @@ func Test_getLabels(t *testing.T) {
 				"key":           "my-bucket/AWSLogs/123456789012/elasticloadbalancing/us-east-1/2022/01/24/123456789012_elasticloadbalancing_us-east-1_app.my-loadbalancer.b13ea9d19f16d015_20220124T0000Z_0.0.0.0_2et2e1mx.log.gz",
 				"month":         "01",
 				"region":        "us-east-1",
-				"lb_type":       LB_ALB_TYPE,
+				"lb_type":       LbAlbType,
 				"src":           "my-loadbalancer",
-				"type":          LB_LOG_TYPE,
+				"type":          LbLogType,
 				"year":          "2022",
 			},
 			wantErr: false,
@@ -86,9 +86,9 @@ func Test_getLabels(t *testing.T) {
 				"key":           "my-bucket/prefix/AWSLogs/123456789012/elasticloadbalancing/us-east-2/2016/05/01/123456789012_elasticloadbalancing_us-east-2_net.my-loadbalancer.1234567890abcdef_201605010000Z_2soosksi.log.gz",
 				"month":         "05",
 				"region":        "us-east-2",
-				"lb_type":       LB_NLB_TYPE,
+				"lb_type":       LbNlbType,
 				"src":           "my-loadbalancer",
-				"type":          LB_LOG_TYPE,
+				"type":          LbLogType,
 				"year":          "2016",
 			},
 			wantErr: false,
@@ -120,7 +120,7 @@ func Test_getLabels(t *testing.T) {
 				"key":           "AWSLogs/123456789012/GuardDuty/us-east-1/2024/05/30/07a3f2ce-1485-3031-b842-e1f324c4a48d.jsonl.gz",
 				"month":         "05",
 				"region":        "us-east-1",
-				"type":          GUARDDUTY_LOG_TYPE,
+				"type":          GuardDutyLogType,
 				"year":          "2024",
 			},
 			wantErr: false,
@@ -153,7 +153,7 @@ func Test_getLabels(t *testing.T) {
 				"month":         "01",
 				"region":        "us-east-1",
 				"src":           "fl-1234abcd",
-				"type":          FLOW_LOG_TYPE,
+				"type":          FlowLogType,
 				"year":          "2022",
 			},
 			wantErr: false,
@@ -186,7 +186,7 @@ func Test_getLabels(t *testing.T) {
 				"month":         "01",
 				"region":        "us-gov-east-1",
 				"src":           "fl-1234abcd",
-				"type":          FLOW_LOG_TYPE,
+				"type":          FlowLogType,
 				"year":          "2022",
 			},
 			wantErr: false,
@@ -219,7 +219,7 @@ func Test_getLabels(t *testing.T) {
 				"month":         "01",
 				"region":        "us-east-1",
 				"src":           "4jhzXFO2Jlvu2b3y",
-				"type":          CLOUDTRAIL_DIGEST_LOG_TYPE,
+				"type":          CloudTrailDigestLogType,
 				"year":          "2022",
 			},
 			wantErr: false,
@@ -252,7 +252,7 @@ func Test_getLabels(t *testing.T) {
 				"month":         "01",
 				"region":        "us-east-1",
 				"src":           "4jhzXFO2Jlvu2b3y",
-				"type":          CLOUDTRAIL_LOG_TYPE,
+				"type":          CloudTrailLogType,
 				"year":          "2022",
 			},
 			wantErr: false,
@@ -285,7 +285,7 @@ func Test_getLabels(t *testing.T) {
 				"month":         "01",
 				"region":        "us-gov-east-1",
 				"src":           "4jhzXFO2Jlvu2b3y",
-				"type":          CLOUDTRAIL_LOG_TYPE,
+				"type":          CloudTrailLogType,
 				"year":          "2022",
 			},
 			wantErr: false,
@@ -319,7 +319,7 @@ func Test_getLabels(t *testing.T) {
 				"organization_id": "o-test123456",
 				"region":          "us-east-1",
 				"src":             "4jhzXFO2Jlvu2b3y",
-				"type":            CLOUDTRAIL_LOG_TYPE,
+				"type":            CloudTrailLogType,
 				"year":            "2022",
 			},
 			wantErr: false,
@@ -351,7 +351,7 @@ func Test_getLabels(t *testing.T) {
 				"month":         "07",
 				"prefix":        "my/bucket/prefix",
 				"src":           "E2K2LNL5N3WR51",
-				"type":          CLOUDFRONT_LOG_TYPE,
+				"type":          CloudFrontLogType,
 				"year":          "2022",
 			},
 			wantErr: false,
@@ -386,7 +386,7 @@ func Test_getLabels(t *testing.T) {
 				"month":         "10",
 				"region":        "us-east-1",
 				"src":           "TEST-WEBACL",
-				"type":          WAF_LOG_TYPE,
+				"type":          WafLogType,
 				"year":          "2021",
 			},
 			wantErr: false,
@@ -421,7 +421,7 @@ func Test_getLabels(t *testing.T) {
 				"month":         "10",
 				"region":        "us-gov-east-1",
 				"src":           "TEST-WEBACL",
-				"type":          WAF_LOG_TYPE,
+				"type":          WafLogType,
 				"year":          "2021",
 			},
 			wantErr: false,
@@ -493,7 +493,7 @@ func Test_parseS3Log(t *testing.T) {
 					streams: map[string]*logproto.Stream{},
 				},
 				labels: map[string]string{
-					"type":       FLOW_LOG_TYPE,
+					"type":       FlowLogType,
 					"src":        "source",
 					"account_id": "123456789",
 				},
@@ -511,7 +511,7 @@ func Test_parseS3Log(t *testing.T) {
 					streams: map[string]*logproto.Stream{},
 				},
 				labels: map[string]string{
-					"type":       LB_LOG_TYPE,
+					"type":       LbLogType,
 					"src":        "source",
 					"account_id": "123456789",
 				},
@@ -534,12 +534,12 @@ func Test_parseS3Log(t *testing.T) {
 				},
 				labels: map[string]string{
 					"account_id": "123456789",
-					"type":       LB_LOG_TYPE,
+					"type":       LbLogType,
 					"region":     "us-east-2",
 					"year":       "2016",
 					"month":      "05",
 					"day":        "01",
-					"lb_type":    LB_NLB_TYPE,
+					"lb_type":    LbNlbType,
 					"src":        "source",
 				},
 			},
@@ -560,7 +560,7 @@ func Test_parseS3Log(t *testing.T) {
 					streams: map[string]*logproto.Stream{},
 				},
 				labels: map[string]string{
-					"type":       CLOUDTRAIL_LOG_TYPE,
+					"type":       CloudTrailLogType,
 					"src":        "source",
 					"account_id": "123456789",
 				},
@@ -582,7 +582,7 @@ func Test_parseS3Log(t *testing.T) {
 					streams: map[string]*logproto.Stream{},
 				},
 				labels: map[string]string{
-					"type":       CLOUDTRAIL_DIGEST_LOG_TYPE,
+					"type":       CloudTrailDigestLogType,
 					"src":        "source",
 					"account_id": "123456789",
 				},
@@ -600,7 +600,7 @@ func Test_parseS3Log(t *testing.T) {
 					streams: map[string]*logproto.Stream{},
 				},
 				labels: map[string]string{
-					"type":   CLOUDFRONT_LOG_TYPE,
+					"type":   CloudFrontLogType,
 					"src":    "DISTRIBUTIONID",
 					"prefix": "path/to/file",
 				},
@@ -624,7 +624,7 @@ func Test_parseS3Log(t *testing.T) {
 				labels: map[string]string{
 					"account_id": "11111111111",
 					"src":        "TEST-WEBACL",
-					"type":       WAF_LOG_TYPE,
+					"type":       WafLogType,
 				},
 			},
 			expectedLen:    1,
@@ -785,7 +785,7 @@ func TestProcessSNSEvent(t *testing.T) {
 	ctx := context.Background()
 	handlerCalled := false
 
-	err := processSNSEvent(ctx, evt, func(ctx context.Context, ev map[string]interface{}) error {
+	err := processSNSEvent(ctx, evt, func(_ context.Context, ev map[string]interface{}) error {
 		handlerCalled = true
 		require.Equal(t, map[string]interface{}{"pass": "pass"}, ev)
 		return nil
@@ -806,7 +806,7 @@ func TestProcessSQSEvent(t *testing.T) {
 	ctx := context.Background()
 	handlerCalled := false
 
-	err := processSQSEvent(ctx, evt, func(ctx context.Context, ev map[string]interface{}) error {
+	err := processSQSEvent(ctx, evt, func(_ context.Context, ev map[string]interface{}) error {
 		handlerCalled = true
 		require.Equal(t, map[string]interface{}{"pass": "pass"}, ev)
 		return nil

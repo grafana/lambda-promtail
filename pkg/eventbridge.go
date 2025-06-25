@@ -32,7 +32,7 @@ type s3EventProcessor func(ctx context.Context, ev *events.S3Event, pc Client, l
 func processEventBridgeEvent(ctx context.Context, ev *events.CloudWatchEvent, pc Client, log *log.Logger, process s3EventProcessor) error {
 	// lambda-promtail should only be used with S3 object creation events, since those indicate that a new file has been
 	// added to bucket, and need to be fetched and parsed accordingly.
-	if !(ev.Source == "aws.s3" && ev.DetailType == "Object Created") {
+	if ev.Source != "aws.s3" || ev.DetailType != "Object Created" {
 		return fmt.Errorf("event bridge event type not supported")
 	}
 
@@ -42,7 +42,7 @@ func processEventBridgeEvent(ctx context.Context, ev *events.CloudWatchEvent, pc
 	}
 
 	// TODO(thepalbi): how to fill bucket owner?
-	var s3Event = events.S3Event{
+	s3Event := events.S3Event{
 		Records: []events.S3EventRecord{
 			{
 				AWSRegion: ev.Region,

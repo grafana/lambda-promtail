@@ -156,7 +156,7 @@ func (c *promtailClient) sendToPromtail(ctx context.Context, b *batch) error {
 		if status > 0 && status != 429 && status/100 != 5 {
 			break
 		}
-		level.Error(*c.log).Log("err", fmt.Errorf("error sending batch, will retry, status: %d error: %s", status, err))
+		level.Error(*c.log).Log("err", fmt.Errorf("error sending batch, will retry, status: %d error: %s", status, err)) // nolint:errcheck
 		backoff.Wait()
 
 		// Make sure it sends at least once before checking for retry.
@@ -166,7 +166,7 @@ func (c *promtailClient) sendToPromtail(ctx context.Context, b *batch) error {
 	}
 
 	if err != nil {
-		level.Error(*c.log).Log("err", fmt.Errorf("failed to send logs! %s", err))
+		level.Error(*c.log).Log("err", fmt.Errorf("failed to send logs! %s", err)) // nolint:errcheck
 		return err
 	}
 
