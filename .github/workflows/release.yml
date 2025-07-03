@@ -1,0 +1,38 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.x'
+
+      - name: Build
+        run: GOOS=linux CGO_ENABLED=0 go build -o ./main ./...
+
+      - name: Package
+        run: zip lambda-promtail.zip main
+
+      - name: AWS Auth
+        id: aws-auth
+        uses: grafana/shared-workflows/actions/aws-auth@aws-auth/v1.0.2
+        with:
+          aws-region: "us-west-1"
+          role-arn: "arn:aws:iam::366620023056:role/github-actions/s3-test-access" # TODO: change to the actual role
+          pass-claims: "repository_owner, repository_name, job_workflow_ref, ref, event_name"
+          set-creds-in-environment: true
+
+      - name: Upload
+        # Define bucket grafanalabs-cf-templates depending on the build trigger. a v-release tag should push to grafanalabs-cf-templates
+        run: aws s3 cp lambda-promtail.zip s3://grafanalabs-dev-cf-templates/lambda-promtail/ --acl public-read
