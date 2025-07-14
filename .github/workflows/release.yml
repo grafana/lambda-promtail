@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - karsten/release # TODO: remove after verifying this workflow works.
 
 jobs:
   build:
