@@ -30,7 +30,7 @@ jobs:
         uses: grafana/shared-workflows/actions/aws-auth@aws-auth/v1.0.2
         with:
           aws-region: "us-west-1"
-          role-arn: "arn:aws:iam::366620023056:role/github-actions/s3-test-access" # TODO: change to the actual role
+          role-arn: "arn:aws:iam::410348018613:role/github-actions-access"
           pass-claims: "repository_owner, repository_name, job_workflow_ref, ref, event_name"
           set-creds-in-environment: true
 
