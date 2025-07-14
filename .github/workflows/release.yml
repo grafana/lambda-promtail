@@ -23,7 +23,7 @@ jobs:
         run: GOOS=linux CGO_ENABLED=0 go build -o ./main ./...
 
       - name: Package
-        run: zip "lambda-promtail-${github.sha:0:9}.zip" main
+        run: zip "lambda-promtail-${{ github.sha }}.zip" main
 
       - name: AWS Auth
         id: aws-auth
@@ -36,4 +36,4 @@ jobs:
 
       - name: Upload
         # Define bucket grafanalabs-cf-templates depending on the build trigger. a v-release tag should push to grafanalabs-cf-templates
-        run: aws s3 cp "lambda-promtail-${github.sha:0:9}.zip" s3://grafanalabs-dev-cf-templates/lambda-promtail/ --acl public-read
+        run: aws s3 cp "lambda-promtail-${{github.sha }}.zip" s3://grafanalabs-dev-cf-templates/lambda-promtail/ --acl public-read
