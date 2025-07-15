@@ -30,7 +30,7 @@ jobs:
         uses: grafana/shared-workflows/actions/aws-auth@aws-auth/v1.0.2
         with:
           aws-region: "us-east-2"
-          role-arn: "arn:aws:iam::410348018613:role/github-actions-access"
+          role-arn: "arn:aws:iam::410348018613:role/github-actions/lambda-promtail-release-write-role"
           pass-claims: "repository_owner, repository_name, job_workflow_ref, ref, event_name"
           set-creds-in-environment: true
 
