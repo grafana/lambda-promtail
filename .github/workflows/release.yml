@@ -22,7 +22,7 @@ jobs:
 
       - name: Set version
         shell: bash
-        run: echo "VERISON=$(./tools/version)" >> $GITHUB_ENV
+        run: echo "VERSION=$(./tools/version)" >> $GITHUB_ENV
 
       - name: Build
         run: GOOS=linux CGO_ENABLED=0 go build -o ./main ./...
@@ -42,4 +42,4 @@ jobs:
 
       - name: Upload
         # Define bucket grafanalabs-cf-templates depending on the build trigger. a v-release tag should push to grafanalabs-cf-templates
-        run: aws s3 cp "lambda-promtail-$VERISON.zip" s3://grafanalabs-dev-cf-templates/lambda-promtail/ --acl public-read
+        run: aws s3 cp "lambda-promtail-$VERSION.zip" s3://grafanalabs-dev-cf-templates/lambda-promtail/ --acl public-read
