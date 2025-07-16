@@ -13,9 +13,9 @@ SHA=$(git rev-parse --short=7 HEAD | head -c7)
 # If not a tag, use branch-hash else use tag
 TAG=$(git describe --tags --exact-match --match 'v*' 2> /dev/null || echo "")
 
-if [ -z "$TAG" ] || [[ "${TAG}" == helm-loki-* ]]
+if [ -z "$TAG" ]
 then
-      echo -n "${BRANCH}"-"${SHA}""${WIP}"
+      echo "${BRANCH}"-"${SHA}""${WIP}"
 else
-      echo -n "${TAG}"
+      echo "${TAG}"
 fi

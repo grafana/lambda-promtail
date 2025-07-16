@@ -20,14 +20,16 @@ jobs:
           go-version: '1.24.x'
           cache: false
 
+      - name: Set version
+        shell: bash
+        run: echo "VERISON=$(./tools/version)" >> $GITHUB_ENV
+
       - name: Build
         run: GOOS=linux CGO_ENABLED=0 go build -o ./main ./...
 
       - name: Package
         shell: bash
-        run: |
-          echo "VERSION=$(./tools/version)" >> "$GITHUB_ENV"
-          zip "lambda-promtail-${{ env.VERSION }}.zip" main
+        run: zip "lambda-promtail-$VERSION.zip" main
 
       - name: AWS Auth
         id: aws-auth
@@ -40,4 +42,4 @@ jobs:
 
       - name: Upload
         # Define bucket grafanalabs-cf-templates depending on the build trigger. a v-release tag should push to grafanalabs-cf-templates
-        run: aws s3 cp "lambda-promtail-${{ env.VERISON }}.zip" s3://grafanalabs-dev-cf-templates/lambda-promtail/ --acl public-read
+        run: aws s3 cp "lambda-promtail-$VERISON.zip" s3://grafanalabs-dev-cf-templates/lambda-promtail/ --acl public-read
