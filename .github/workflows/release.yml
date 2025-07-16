@@ -33,7 +33,7 @@ jobs:
 
       - name: AWS Auth Dev
         id: aws-auth
-        if: !startsWith(github.ref, 'refs/tags/v')
+        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
         uses: grafana/shared-workflows/actions/aws-auth@aws-auth/v1.0.2
         with:
           aws-region: "us-east-2"
@@ -42,7 +42,7 @@ jobs:
           set-creds-in-environment: true
 
       - name: Upload Dev
-        if: !startsWith(github.ref, 'refs/tags/v')
+        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
         run: aws s3 cp "lambda-promtail-$VERSION.zip" s3://grafanalabs-dev-cf-templates/lambda-promtail/ --acl public-read
 
       - name: AWS Auth Prod
