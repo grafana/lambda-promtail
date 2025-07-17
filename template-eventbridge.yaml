@@ -55,6 +55,10 @@ Parameters:
     Description: The S3 bucket to listen event notifications from.
     Type: String
     Default: ""
+  EventSourceS3PrefixKey:
+    Description: An optional prefix in the S3 bucket to listen for event notifications from.
+    Type: String
+    Default: ""
 
 Resources:
   LambdaPromtailRole:
@@ -141,6 +145,9 @@ Resources:
           bucket:
             name:
               - !Ref EventSourceS3Bucket
+          object:
+            key:
+              - prefix: !Ref EventSourceS3PrefixKey
       Targets:
         - Arn: !GetAtt LambdaPromtailFunction.Arn
           Id: LambdaPromtailTarget
