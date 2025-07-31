@@ -30,20 +30,20 @@ output "log_group_arn" {
 
 output "kinesis_stream_name" {
   description = "The name of the Kinesis stream for the Lambda function"
-  value       = aws_kinesis_stream.this[0].name
+  value       = { for key, stream in aws_kinesis_stream.this : key => stream.name }
 }
 
 output "kinesis_stream_arn" {
   description = "The ARN of the Kinesis stream for the Lambda function"
-  value       = aws_kinesis_stream.this[0].arn
+  value       = { for key, stream in aws_kinesis_stream.this : key => stream.arn }
 }
 
 output "sqs_queue_name" {
   description = "The name of the SQS queue for the Lambda function"
-  value       = aws_sqs_queue.main[0].name
+  value       = aws_sqs_queue.main[*].name
 }
 
 output "sqs_queue_arn" {
   description = "The ARN of the SQS queue for the Lambda function"
-  value       = aws_sqs_queue.main[0].arn
+  value       = aws_sqs_queue.main[*].arn
 }
