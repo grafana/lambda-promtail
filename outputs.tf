@@ -30,12 +30,12 @@ output "log_group_arn" {
 
 output "kinesis_stream_name" {
   description = "The name of the Kinesis stream for the Lambda function"
-  value       = aws_kinesis_stream.this.name
+  value       = aws_kinesis_stream.this[0].name
 }
 
 output "kinesis_stream_arn" {
   description = "The ARN of the Kinesis stream for the Lambda function"
-  value       = aws_kinesis_stream.this.arn
+  value       = aws_kinesis_stream.this[0].arn
 }
 
 output "sqs_queue_name" {
