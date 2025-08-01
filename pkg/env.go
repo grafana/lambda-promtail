@@ -3,8 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/aws/aws-sdk-go-v2/aws/arn"
 	"os"
+
+	"github.com/aws/aws-sdk-go-v2/aws/arn"
 )
 
 type secretFetcher interface {
