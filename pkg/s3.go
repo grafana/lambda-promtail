@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"net/url"
 	"regexp"
 	"strconv"
 	"time"
@@ -248,11 +249,14 @@ func parseS3Log(ctx context.Context, b *batch, labels map[string]string, obj io.
 
 func getLabels(record events.S3EventRecord) (map[string]string, error) {
 	labels := make(map[string]string)
-
-	labels["key"] = record.S3.Object.Key
 	labels["bucket"] = record.S3.Bucket.Name
 	labels["bucket_owner"] = record.S3.Bucket.OwnerIdentity.PrincipalID
 	labels["bucket_region"] = record.AWSRegion
+	decodedKey, err := url.QueryUnescape(record.S3.Object.Key)
+	if err != nil {
+		return labels, fmt.Errorf("failed to decode S3 object key %q: %s", record.S3.Object.Key, err)
+	}
+	labels["key"] = decodedKey
 	for key, p := range parsers {
 		if p.filenameRegex.MatchString(labels["key"]) {
 			if labels["type"] == "" {

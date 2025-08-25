@@ -357,6 +357,70 @@ func Test_getLabels(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "s3_url_encoded_1",
+			args: args{
+				record: events.S3EventRecord{
+					AWSRegion: "us-east-1",
+					S3: events.S3Entity{
+						Bucket: events.S3Bucket{
+							Name: "cloudfront_logs_test",
+							OwnerIdentity: events.S3UserIdentity{
+								PrincipalID: "test",
+							},
+						},
+						Object: events.S3Object{
+							Key: "my/bucket/my%2Dprefix/E2K2LNL5N3WR51.2022-07-18-12.a10a8496.gz",
+						},
+					},
+				},
+			},
+			want: map[string]string{
+				"bucket":        "cloudfront_logs_test",
+				"bucket_owner":  "test",
+				"bucket_region": "us-east-1",
+				"day":           "18",
+				"key":           "my/bucket/my-prefix/E2K2LNL5N3WR51.2022-07-18-12.a10a8496.gz",
+				"month":         "07",
+				"prefix":        "my/bucket/my-prefix",
+				"src":           "E2K2LNL5N3WR51",
+				"type":          CloudFrontLogType,
+				"year":          "2022",
+			},
+			wantErr: false,
+		},
+		{
+			name: "s3_url_encoded_2",
+			args: args{
+				record: events.S3EventRecord{
+					AWSRegion: "us-east-1",
+					S3: events.S3Entity{
+						Bucket: events.S3Bucket{
+							Name: "cloudfront_logs_test",
+							OwnerIdentity: events.S3UserIdentity{
+								PrincipalID: "test",
+							},
+						},
+						Object: events.S3Object{
+							Key: "my/bucket/my+prefix/E2K2LNL5N3WR51.2022-07-18-12.a10a8496.gz",
+						},
+					},
+				},
+			},
+			want: map[string]string{
+				"bucket":        "cloudfront_logs_test",
+				"bucket_owner":  "test",
+				"bucket_region": "us-east-1",
+				"day":           "18",
+				"key":           "my/bucket/my prefix/E2K2LNL5N3WR51.2022-07-18-12.a10a8496.gz",
+				"month":         "07",
+				"prefix":        "my/bucket/my prefix",
+				"src":           "E2K2LNL5N3WR51",
+				"type":          CloudFrontLogType,
+				"year":          "2022",
+			},
+			wantErr: false,
+		},
+		{
 			name: "s3_waf",
 			args: args{
 				record: events.S3EventRecord{
