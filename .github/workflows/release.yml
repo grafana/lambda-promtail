@@ -43,7 +43,11 @@ jobs:
 
       - name: Upload Dev
         if: ${{ !startsWith(github.ref, 'refs/tags/v') && github.ref == 'refs/heads/main' }}
-        run: aws s3 cp "lambda-promtail-$VERSION.zip" s3://grafanalabs-dev-cf-templates/lambda-promtail/ --acl public-read
+        run: |
+          aws s3 cp "lambda-promtail-$VERSION.zip" s3://grafanalabs-dev-cf-templates/lambda-promtail/ --acl public-read
+          aws s3 cp lambda-promtail.yaml s3://grafanalabs-dev-cf-templates/cloudwatch-logs/ --acl public-read
+          aws s3 cp aws-alb-logs.yaml s3://grafanalabs-dev-cf-templates/logs-with-lambda/ --acl public-read
+          aws s3 cp aws-eventbridge-logs.yaml s3://grafanalabs-dev-cf-templates/logs-with-lambda/ --acl public-read
 
       - name: AWS Auth Prod
         id: aws-auth-prod
@@ -57,4 +61,8 @@ jobs:
 
       - name: Upload Prod
         if: startsWith(github.ref, 'refs/tags/v')
-        run: aws s3 cp "lambda-promtail-$VERSION.zip" s3://grafanalabs-cf-templates/lambda-promtail/ --acl public-read
+        run: |
+          aws s3 cp "lambda-promtail-$VERSION.zip" s3://grafanalabs-cf-templates/lambda-promtail/ --acl public-read
+          aws s3 cp lambda-promtail.yaml s3://grafanalabs-cf-templates/cloudwatch-logs/ --acl public-read
+          aws s3 cp aws-alb-logs.yaml s3://grafanalabs-cf-templates/logs-with-lambda/ --acl public-read
+          aws s3 cp aws-eventbridge-logs.yaml s3://grafanalabs-cf-templates/logs-with-lambda/ --acl public-read

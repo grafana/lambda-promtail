@@ -40,6 +40,18 @@ variable "lambda_promtail_image" {
   default     = ""
 }
 
+variable "lambda_promtail_binary_bucket" {
+  type        = string
+  description = "The S3 bucket containing the lambda-promtail binary."
+  default     = ""
+}
+
+variable "lambda_promtail_binary_key" {
+  type        = string
+  description = "The S3 key containing the lambda-promtail binary."
+  default     = "lambda-promtail.zip"
+}
+
 variable "username" {
   type        = string
   description = "The basic auth username, necessary if writing directly to Grafana Cloud Loki."
