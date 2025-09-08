@@ -30,7 +30,7 @@ The provided Makefile has targets `build`, and `clean`.
 
 ### Packaging and deployment
 
-The easiest way to deploy to AWS Lambda using the Golang runtime is to build the `lambda-promtail` go file, zip it and upload it to the lambda function with terraform.
+The easiest way to deploy to AWS Lambda using the Golang runtime is to build the `lambda-promtail` go file, zip it and upload it to the Lambda function with terraform.
 
 To deploy your application for the first time, first make sure you've set the following value in the Terraform file:
 - `WRITE_ADDRESS`
