@@ -357,6 +357,73 @@ func Test_getLabels(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "s3_url_encoded_1",
+			args: args{
+				record: events.S3EventRecord{
+					AWSRegion: "us-east-1",
+					S3: events.S3Entity{
+						Bucket: events.S3Bucket{
+							Name: "cloudfront_logs_test",
+							OwnerIdentity: events.S3UserIdentity{
+								PrincipalID: "test",
+							},
+						},
+						Object: events.S3Object{
+							Key: "my/bucket/my%2Dprefix/E2K2LNL5N3WR51.2022-07-18-12.a10a8496.gz",
+						},
+					},
+				},
+			},
+			want: map[string]string{
+				"bucket":        "cloudfront_logs_test",
+				"bucket_owner":  "test",
+				"bucket_region": "us-east-1",
+				"day":           "18",
+				"key":           "my/bucket/my-prefix/E2K2LNL5N3WR51.2022-07-18-12.a10a8496.gz",
+				"month":         "07",
+				"prefix":        "my/bucket/my-prefix",
+				"src":           "E2K2LNL5N3WR51",
+				"type":          CloudFrontLogType,
+				"year":          "2022",
+			},
+			wantErr: false,
+		},
+		{
+			name: "s3_url_encoded_2",
+			args: args{
+				record: events.S3EventRecord{
+					AWSRegion: "us-east-1",
+					S3: events.S3Entity{
+						Bucket: events.S3Bucket{
+							Name: "waf_logs_test",
+							OwnerIdentity: events.S3UserIdentity{
+								PrincipalID: "test",
+							},
+						},
+						Object: events.S3Object{
+							Key: "my+prefix/AWSLogs/11111111111/WAFLogs/us-east-1/TEST-WEBACL/2021/10/28/19/50/11111111111_waflogs_us-east-1_TEST-WEBACL_20211028T1950Z_e0ca43b5.log.gz",
+						},
+					},
+				},
+			},
+			want: map[string]string{
+				"account_id":    "11111111111",
+				"bucket_owner":  "test",
+				"bucket_region": "us-east-1",
+				"bucket":        "waf_logs_test",
+				"day":           "28",
+				"hour":          "19",
+				"key":           "my prefix/AWSLogs/11111111111/WAFLogs/us-east-1/TEST-WEBACL/2021/10/28/19/50/11111111111_waflogs_us-east-1_TEST-WEBACL_20211028T1950Z_e0ca43b5.log.gz",
+				"minute":        "50",
+				"month":         "10",
+				"region":        "us-east-1",
+				"src":           "TEST-WEBACL",
+				"type":          WafLogType,
+				"year":          "2021",
+			},
+			wantErr: false,
+		},
+		{
 			name: "s3_waf",
 			args: args{
 				record: events.S3EventRecord{
