@@ -188,8 +188,9 @@ resource "aws_cloudwatch_log_group" "this" {
 }
 
 locals {
-  binary_path  = "${path.module}/lambda-promtail/bootstrap"
-  archive_path = "${path.module}/lambda-promtail/${var.name}.zip"
+  go_source_dir = "${path.module}/pkg"
+  binary_path   = "${local.go_source_dir}/bootstrap"
+  archive_path  = "${local.go_source_dir}/${var.name}.zip"
 }
 
 resource "null_resource" "function_binary" {
@@ -200,7 +201,7 @@ resource "null_resource" "function_binary" {
 
   provisioner "local-exec" {
     command     = "GOOS=linux GOARCH=amd64 CGO_ENABLED=0 GOFLAGS=-trimpath go build -mod=readonly -ldflags='-s -w' -o bootstrap"
-    working_dir = format("%s/%s", path.module, "lambda-promtail")
+    working_dir = local.go_source_dir
   }
 }
 
@@ -220,7 +221,7 @@ resource "aws_lambda_function" "this" {
 
   image_uri        = var.lambda_promtail_image == "" ? null : var.lambda_promtail_image
   s3_bucket        = var.lambda_promtail_binary_bucket == "" ? null : var.lambda_promtail_binary_bucket
-  s3_key           = var.lambda_promtail_binary_key == "" ? null : var.lambda_promtail_binary_key
+  s3_key           = var.lambda_promtail_binary_bucket == "" ? null : var.lambda_promtail_binary_key
   filename         = var.lambda_promtail_image == "" ? local.archive_path : null
   source_code_hash = var.lambda_promtail_image == "" ? data.archive_file.lambda[0].output_base64sha256 : null
   runtime          = var.lambda_promtail_image == "" ? "provided.al2023" : null
