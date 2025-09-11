@@ -1,1 +1,5 @@
 main
+
+# ignore build artifacts
+pkg/bootstrap
+pkg/*.zip
