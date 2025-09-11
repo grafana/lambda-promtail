@@ -13,7 +13,7 @@ Grafana Loki includes [Terraform](https://www.terraform.io/) and [CloudFormation
 
 ## Deployment
 
-lambda-promtail can easily be deployed via provided [Terraform](https://github.com/grafana/lambda-promtail/blob/main/main.tf) and [CloudFormation](https://github.com/grafana/lambda-promtail/blob/main/template.yaml) files. The Terraform deployment also pulls variable values defined from [variables.tf](https://github.com/grafana/lambda-promtail/blob/main/variables.tf ).
+lambda-promtail can easily be deployed via provided [Terraform](https://github.com/grafana/lambda-promtail/blob/main/tools/lambda-promtail/main.tf) and [CloudFormation](https://github.com/grafana/lambda-promtail/blob/main/lambda-promtail.yaml) files. The Terraform deployment also pulls variable values defined from [variables.tf](https://github.com/grafana/lambda-promtail/blob/main/variables.tf).
 
 For both deployment types there are a few values that must be defined:
 
@@ -36,12 +36,12 @@ In an effort to make deployment of lambda-promtail as simple as possible, we've 
 
 Terraform:
 
-```tf
+```terraform
 ## use cloudwatch log group
 terraform apply -var "lambda_promtail_image=<repo:tag>" -var "write_address=https://logs-prod-us-central1.grafana.net/loki/api/v1/push" -var "password=<password>" -var "username=<user>" -var 'log_group_names=["/aws/lambda/log-group-1", "/aws/lambda/log-group-2"]' -var 'bucket_names=["bucket-a", "bucket-b"]' -var 'batch_size=131072'
 ```
 
-```tf
+```terraform
 ## use kinesis data stream
 terraform apply -var "<ecr-repo>:<tag>" -var "write_address=https://your-loki-url/loki/api/v1/push" -var "password=<basic-auth-pw>" -var "username=<basic-auth-username>" -var 'kinesis_stream_name=["kinesis-stream-01", "kinesis-stream-02"]' -var 'extra_labels="name1,value1,name2,value2"' -var "tenant_id=<value>"
 ```
@@ -49,7 +49,7 @@ terraform apply -var "<ecr-repo>:<tag>" -var "write_address=https://your-loki-ur
 The first few lines of `main.tf` define the AWS region to deploy to.
 Modify as desired, or remove and deploy to
 
-```tf
+```terraform
 provider "aws" {
   region = "us-east-2"
 }
@@ -63,17 +63,17 @@ To add tenant id add `-var "tenant_id=value"`.
 
 Note that the creation of a subscription filter on Cloudwatch in the provided Terraform file only accepts an array of log group names.
 It does **not** accept strings for regex filtering on the logs contents via the subscription filters. We suggest extending the Terraform file to do so.
-Or, have lambda-promtail write to Promtail and use [pipeline stages](https://grafana.com/docs/loki/latest/send-data/promtail/stages/drop/).
+Or, have lambda-promtail write to Promtail and use [pipeline stages](https://grafana.com/docs/loki/<LOKI_VERSION>/send-data/promtail/stages/drop/).
 
 CloudFormation:
 
-```
+```terraform
 aws cloudformation create-stack --stack-name lambda-promtail --template-body file://template.yaml --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM --region us-east-2 --parameters ParameterKey=WriteAddress,ParameterValue=https://logs-prod-us-central1.grafana.net/loki/api/v1/push ParameterKey=Username,ParameterValue=<user> ParameterKey=Password,ParameterValue=<password> ParameterKey=LambdaPromtailImage,ParameterValue=<repo:tag>
 ```
 
 Within the CloudFormation template file, copy, paste, and modify the subscription filter section as needed for each log group:
 
-```
+```terraform
 MainLambdaPromtailSubscriptionFilter:
   Type: AWS::Logs::SubscriptionFilter
   Properties:
@@ -147,7 +147,7 @@ The diagram below shows how notifications logs will be written from the source s
 
 {{< figure src="https://grafana.com/media/docs/loki/lambda-promtail-with-eventbridge.png" alt="The diagram shows how notifications logs are written from the source service into an S3 bucket">}}
 
-The [template-eventbridge.yaml](https://github.com/grafana/lambda-promtail/blob/main/template-eventbridge.yaml) CloudFormation template configures Lambda-promtail with EventBridge to address this known issue. To deploy the template, use the snippet below, completing appropriately the `ParameterValue` arguments.
+The [template-eventbridge.yaml](https://github.com/grafana/lambda-promtail/blob/main/aws-eventbridge-logs.yaml) CloudFormation template configures Lambda-promtail with EventBridge to address this known issue. To deploy the template, use the snippet below, completing appropriately the `ParameterValue` arguments.
 
 ```bash
 aws cloudformation create-stack \
@@ -160,7 +160,7 @@ aws cloudformation create-stack \
 
 ## Propagated Labels
 
-Incoming logs can have seven special labels assigned to them which can be used in [relabeling](https://grafana.com/docs/loki/latest/send-data/promtail/configuration/#relabel_configs) or later stages in a Promtail [pipeline](https://grafana.com/docs/loki/latest/send-data/promtail/pipelines/):
+Incoming logs can have seven special labels assigned to them which can be used in [relabeling](https://grafana.com/docs/loki/<LOKI_VERSION>/send-data/promtail/configuration/#relabel_configs) or later stages in a Promtail [pipeline](https://grafana.com/docs/loki/<LOKI_VERSION>/send-data/promtail/pipelines/):
 
 - `__aws_log_type`: Where this log came from (Cloudwatch, Kinesis or S3).
 - `__aws_cloudwatch_log_group`: The associated Cloudwatch Log Group for this log.
@@ -178,71 +178,71 @@ Example configurations:
 
 1. Rename a label and capture regex groups:
 
-    ```json
+```json
+{
+  "RELABEL_CONFIGS": [
     {
-      "RELABEL_CONFIGS": [
-        {
-          "source_labels": ["__aws_log_type"],
-          "target_label": "log_type",
-          "action": "replace",
-          "regex": "(.*)",
-          "replacement": "${1}"
-        }
-      ]
+      "source_labels": ["__aws_log_type"],
+      "target_label": "log_type",
+      "action": "replace",
+      "regex": "(.*)",
+      "replacement": "${1}"
     }
-    ```
+  ]
+}
+```
 
-1. Keep only specific log types (useful for filtering):
+2. Keep only specific log types (useful for filtering):
 
-    ```json
+```json
+{
+  "RELABEL_CONFIGS": [
     {
-      "RELABEL_CONFIGS": [
-        {
-          "source_labels": ["__aws_log_type"],
-          "regex": "s3_.*",
-          "action": "keep"
-        }
-      ]
+      "source_labels": ["__aws_log_type"],
+      "regex": "s3_.*",
+      "action": "keep"
     }
-    ```
+  ]
+}
+```
 
-1. Drop internal AWS labels (cleanup):
+3. Drop internal AWS labels (cleanup):
 
-    ```json
+```json
+{
+  "RELABEL_CONFIGS": [
     {
-      "RELABEL_CONFIGS": [
-        {
-          "regex": "__aws_.*",
-          "action": "labeldrop"
-        }
-      ]
+      "regex": "__aws_.*",
+      "action": "labeldrop"
     }
-    ```
+  ]
+}
+```
 
-1. Multiple relabeling rules (combining different actions):
+4. Multiple relabeling rules (combining different actions):
 
-    ```json
+```json
+{
+  "RELABEL_CONFIGS": [
     {
-      "RELABEL_CONFIGS": [
-        {
-          "source_labels": ["__aws_log_type"],
-          "target_label": "log_type",
-          "action": "replace",
-          "regex": "(.*)",
-          "replacement": "${1}"
-        },
-        {
-          "source_labels": ["__aws_s3_log_lb"],
-          "target_label": "loadbalancer",
-          "action": "replace"
-        },
-        {
-          "regex": "__aws_.*",
-          "action": "labeldrop"
-        }
-      ]
+      "source_labels": ["__aws_log_type"],
+      "target_label": "log_type",
+      "action": "replace",
+      "regex": "(.*)",
+      "replacement": "${1}"
+    },
+    {
+      "source_labels": ["__aws_s3_log_lb"],
+      "target_label": "loadbalancer",
+      "action": "replace"
+    },
+    {
+      "regex": "__aws_.*",
+      "action": "labeldrop"
     }
-    ```
+  ]
+}
+```
 
 ### Supported Actions
 
