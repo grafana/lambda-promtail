@@ -72,9 +72,12 @@ func (rc *RelabelConfig) ToPrometheusConfig() (*relabel.Config, error) {
 		replacement = relabel.DefaultRelabelConfig.Replacement
 	}
 
-	sourceLabels := make(model.LabelNames, 0, len(rc.SourceLabels))
-	for _, l := range rc.SourceLabels {
-		sourceLabels = append(sourceLabels, model.LabelName(l))
+	var sourceLabels model.LabelNames
+	if len(rc.SourceLabels) > 0 { // keep sourceLabels as nil to make validator happy for LabelDrop and LabelKeep actions
+		sourceLabels = make(model.LabelNames, 0, len(rc.SourceLabels))
+		for _, l := range rc.SourceLabels {
+			sourceLabels = append(sourceLabels, model.LabelName(l))
+		}
 	}
 
 	cfg := &relabel.Config{
