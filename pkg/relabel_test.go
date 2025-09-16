@@ -91,6 +91,14 @@ func TestParseRelabelConfigs(t *testing.T) {
 			}]`,
 			wantErr: false,
 		},
+		{
+			name: "labeldrop",
+			input: `[{
+				"regex": "__aws_.*",
+				"action": "labeldrop"
+			}]`,
+			wantErr: false,
+		},
 	}
 
 	for _, tt := range tests {
