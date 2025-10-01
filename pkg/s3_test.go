@@ -126,6 +126,39 @@ func Test_getLabels(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "s3_access",
+			args: args{
+				record: events.S3EventRecord{
+					AWSRegion: "us-east-1",
+					S3: events.S3Entity{
+						Bucket: events.S3Bucket{
+							Name: "s3_access_test",
+							OwnerIdentity: events.S3UserIdentity{
+								PrincipalID: "test",
+							},
+						},
+						Object: events.S3Object{
+							Key: "123456789012/us-east-1/amzn-s3-demo-source-bucket/2023/03/01/2023-03-01-21-32-16-E568B2907131C0C0",
+						},
+					},
+				},
+			},
+			want: map[string]string{
+				"account_id":    "123456789012",
+				"bucket":        "s3_access_test",
+				"bucket_owner":  "test",
+				"bucket_region": "us-east-1",
+				"day":           "01",
+				"key":           "123456789012/us-east-1/amzn-s3-demo-source-bucket/2023/03/01/2023-03-01-21-32-16-E568B2907131C0C0",
+				"month":         "03",
+				"region":        "us-east-1",
+				"src":           "amzn-s3-demo-source-bucket",
+				"type":          S3AccessLogType,
+				"year":          "2023",
+			},
+			wantErr: false,
+		},
+		{
 			name: "s3_flow_logs",
 			args: args{
 				record: events.S3EventRecord{
@@ -698,6 +731,27 @@ func Test_parseS3Log(t *testing.T) {
 			expectedStream: `{__aws_log_type="s3_waf", __aws_s3_waf="TEST-WEBACL", __aws_s3_waf_owner="11111111111"}`,
 			expectedTimestamps: []time.Time{
 				time.Date(2023, time.August, 31, 4, 57, 42, 729000000, time.UTC),
+			},
+			wantErr: false,
+		},
+		{
+			name: "s3_access",
+			args: args{
+				batchSize: 131072, // Set large enough we don't try and send to promtail
+				filename:  "../testdata/s3accesslog.log",
+				b: &batch{
+					streams: map[string]*logproto.Stream{},
+				},
+				labels: map[string]string{
+					"account_id": "123456789012",
+					"src":        "amzn-s3-demo-bucket1",
+					"type":       S3AccessLogType,
+				},
+			},
+			expectedLen:    1,
+			expectedStream: `{__aws_log_type="s3_access", __aws_s3_access="amzn-s3-demo-bucket1", __aws_s3_access_owner="123456789012"}`,
+			expectedTimestamps: []time.Time{
+				time.Date(2019, time.February, 6, 0, 0, 38, 0, time.UTC),
 			},
 			wantErr: false,
 		},
