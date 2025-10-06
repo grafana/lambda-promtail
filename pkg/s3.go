@@ -52,7 +52,7 @@ const (
 	LbAlbType               string = "app"
 	WafLogType              string = "WAFLogs"
 	GuardDutyLogType        string = "GuardDuty"
-	MSK_LOG_TYPE            string = "KafkaBrokerLogs"
+	MskLogType              string = "KafkaBrokerLogs"
 )
 
 var (
@@ -144,7 +144,7 @@ var (
 			timestampRegex:  defaultTimestampRegex,
 			timestampType:   "string",
 		},
-		MSK_LOG_TYPE: {
+		MskLogType: {
 			logTypeLabel:    "s3_msk",
 			filenameRegex:   mskFilenameRegex,
 			ownerLabelKey:   "account_id",
