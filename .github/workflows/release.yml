@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - karsten/release # TODO: remove after verifying this workflow works.
 
 jobs:
   build:
@@ -41,6 +40,14 @@ jobs:
           pass-claims: "repository_owner, repository_name, job_workflow_ref, ref, event_name"
           set-creds-in-environment: true
 
+      - name: Upload Dev
+        if: ${{ !startsWith(github.ref, 'refs/tags/v') && github.ref == 'refs/heads/main' }}
+        run: |
+          aws s3 cp "lambda-promtail-$VERSION.zip" s3://grafanalabs-dev-cf-templates/lambda-promtail/ --acl public-read
+          aws s3 cp lambda-promtail.yaml s3://grafanalabs-dev-cf-templates/cloudwatch-logs/ --acl public-read
+          aws s3 cp aws-alb-logs.yaml s3://grafanalabs-dev-cf-templates/logs-with-lambda/ --acl public-read
+          aws s3 cp aws-eventbridge-logs.yaml s3://grafanalabs-dev-cf-templates/logs-with-lambda/ --acl public-read
+
       - name: AWS Auth Prod
         id: aws-auth-prod
         if: startsWith(github.ref, 'refs/tags/v')
@@ -50,20 +57,6 @@ jobs:
           role-arn: "arn:aws:iam::008923505280:role/github-actions/lambda-promtail-release-write-role"
           pass-claims: "repository_owner, repository_name, job_workflow_ref, ref, event_name"
           set-creds-in-environment: true
-
-      - name: Validate Templates
-        run: |
-          aws cloudformation validate-template --template-body lambda-promtail.yaml
-          aws cloudformation validate-template --template-body aws-alb-logs.yaml
-          aws cloudformation validate-template --template-body aws-eventbridge-logs.yaml
-
-      - name: Upload Dev
-        if: ${{ !startsWith(github.ref, 'refs/tags/v') && github.ref == 'refs/heads/main' }}
-        run: |
-          aws s3 cp "lambda-promtail-$VERSION.zip" s3://grafanalabs-dev-cf-templates/lambda-promtail/ --acl public-read
-          aws s3 cp lambda-promtail.yaml s3://grafanalabs-dev-cf-templates/cloudwatch-logs/ --acl public-read
-          aws s3 cp aws-alb-logs.yaml s3://grafanalabs-dev-cf-templates/logs-with-lambda/ --acl public-read
-          aws s3 cp aws-eventbridge-logs.yaml s3://grafanalabs-dev-cf-templates/logs-with-lambda/ --acl public-read
 
       - name: Upload Prod
         if: startsWith(github.ref, 'refs/tags/v')
