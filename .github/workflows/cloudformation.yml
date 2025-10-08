@@ -1,33 +1,20 @@
-name: CloudFormation Check
+name: Lint CloudFormation Templates
 
-on: [push, pull_request]
+on: [push]
 
 jobs:
-  check:
+  cloudformation-linter:
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
+    permissions: {}
 
     steps:
-      - uses: actions/checkout@v4
-      - name: Setup Go
-        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          go-version: '1.24.x'
-          cache: false
+          persist-credentials: false
 
-      - name: AWS Auth Dev
-        id: aws-auth-dev
-        uses: grafana/shared-workflows/actions/aws-auth@954bcbdf6e64fe612210885b47df771d9d20447b #aws-auth/v1.0.2
+      - name: Testing with CFN Lint Command
+        uses: scottbrenner/cfn-lint-action@25ee47d1ab3146bda904df745511735cc0b9a970 # v2.5.2
         with:
-          aws-region: "us-east-2"
-          role-arn: "arn:aws:iam::410348018613:role/github-actions/lambda-promtail-release-write-role"
-          pass-claims: "repository_owner, repository_name, job_workflow_ref, ref, event_name"
-          set-creds-in-environment: true
-
-      - name: Validate Templates
-        run: |
-          aws cloudformation validate-template --template-body lambda-promtail.yaml
-          aws cloudformation validate-template --template-body aws-alb-logs.yaml
-          aws cloudformation validate-template --template-body aws-eventbridge-logs.yaml
-
+          version: "[sarif]>=1.0"
+          command: cfn-lint -t ./lambda-promtail.yml
