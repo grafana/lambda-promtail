@@ -1,9 +1,9 @@
-name: Lint CloudFormation Templates
+name: CloudFormation Templates
 
 on: [push]
 
 jobs:
-  cloudformation-linter:
+  lint:
     runs-on: ubuntu-latest
     permissions: {}
 
@@ -17,4 +17,4 @@ jobs:
         uses: scottbrenner/cfn-lint-action@25ee47d1ab3146bda904df745511735cc0b9a970 # v2.5.2
         with:
           version: "[sarif]>=1.0"
-          command: cfn-lint -t ./lambda-promtail.yml
+          command: cfn-lint -t ./lambda-promtail.yaml
