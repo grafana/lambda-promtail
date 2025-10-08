@@ -13,8 +13,8 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Testing with CFN Lint Command
+      - name: templates 
         uses: scottbrenner/cfn-lint-action@25ee47d1ab3146bda904df745511735cc0b9a970 # v2.5.2
         with:
           version: "[sarif]>=1.0"
-          command: cfn-lint -t ./lambda-promtail.yaml
+          command: cfn-lint --non-zero-exit-code error -t ./*.yaml
