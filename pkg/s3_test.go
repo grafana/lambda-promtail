@@ -494,6 +494,44 @@ func Test_getLabels(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "s3_msk",
+			args: args{
+				record: events.S3EventRecord{
+					AWSRegion: "eu-south-2",
+					S3: events.S3Entity{
+						Bucket: events.S3Bucket{
+							Name: "msk_logs_test",
+							OwnerIdentity: events.S3UserIdentity{
+								PrincipalID: "test",
+							},
+						},
+						Object: events.S3Object{
+							Key: "prefix/AWSLogs/111111111111/KafkaBrokerLogs/eu-south-2/msk-test-name-7f6b9b77-24f9-4921-87b6-d29a6401e292-3/2025-07-04-11/Broker-1_11-55_cab960bb.log.gz",
+						},
+					},
+				},
+			},
+			want: map[string]string{
+				"account_id":    "111111111111",
+				"broker_id":     "1",
+				"bucket":        "msk_logs_test",
+				"bucket_owner":  "test",
+				"bucket_region": "eu-south-2",
+				"cluster_name":  "msk-test-name-7f6b9b77-24f9-4921-87b6-d29a6401e292",
+				"cluster_uuid":  "3",
+				"day":           "04",
+				"hour":          "11",
+				"key":           "prefix/AWSLogs/111111111111/KafkaBrokerLogs/eu-south-2/msk-test-name-7f6b9b77-24f9-4921-87b6-d29a6401e292-3/2025-07-04-11/Broker-1_11-55_cab960bb.log.gz",
+				"log_hour":      "11",
+				"log_minute":    "55",
+				"month":         "07",
+				"region":        "eu-south-2",
+				"type":          MskLogType,
+				"year":          "2025",
+			},
+			wantErr: false,
+		},
+		{
 			name: "missing_type",
 			args: args{
 				record: events.S3EventRecord{
@@ -698,6 +736,28 @@ func Test_parseS3Log(t *testing.T) {
 			expectedStream: `{__aws_log_type="s3_waf", __aws_s3_waf="TEST-WEBACL", __aws_s3_waf_owner="11111111111"}`,
 			expectedTimestamps: []time.Time{
 				time.Date(2023, time.August, 31, 4, 57, 42, 729000000, time.UTC),
+			},
+			wantErr: false,
+		},
+		{
+			name: "msklogs",
+			args: args{
+				batchSize: 1024,
+				filename:  "../testdata/msklog.log.gz",
+				b: &batch{
+					streams: map[string]*logproto.Stream{},
+				},
+				labels: map[string]string{
+					"type":       MskLogType,
+					"src":        "msk-test-name-7f6b9b77-24f9-4921-87b6-d29a6401e292-3",
+					"account_id": "111111111111",
+				},
+			},
+			expectedLen:    1,
+			expectedStream: `{__aws_log_type="s3_msk", __aws_s3_msk="msk-test-name-7f6b9b77-24f9-4921-87b6-d29a6401e292-3", __aws_s3_msk_owner="111111111111"}`,
+			expectedTimestamps: []time.Time{
+				time.Date(2025, time.July, 4, 11, 57, 55, 836000000, time.UTC),
+				time.Date(2025, time.July, 4, 11, 57, 55, 839000000, time.UTC),
 			},
 			wantErr: false,
 		},
