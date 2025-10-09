@@ -96,7 +96,7 @@ var (
 	wafTimestampRegex         = regexp.MustCompile(`"timestamp":\s*(?P<timestamp>\d+),`)
 	guarddutyFilenameRegex    = regexp.MustCompile(`AWSLogs\/(?P<account_id>\d+)\/(?P<type>GuardDuty)\/(?P<region>[\w-]+)\/(?P<year>\d+)\/(?P<month>\d+)\/(?P<day>\d+)\/.+`)
 	s3AccessLogFilenameRegex  = regexp.MustCompile(`(?P<account_id>\d+)\/(?P<region>[\w-]+)\/(?P<src>[a-zA-Z0-9\-]+)\/(?P<year>\d+)\/(?P<month>\d+)\/(?P<day>\d+)\/[a-zA-Z0-9\-]+$`)
-	s3AccessLogTimestampRegex = regexp.MustCompile(`\[(?P<timestamp>\d+\/\w+\/\d+:\d+:\d+:\d+ \+\d+)\]`)
+	s3AccessLogTimestampRegex = regexp.MustCompile(`\[(?P<timestamp>\d+\/\w+\/\d+:\d+:\d+:\d+ [\+-]\d+)\]`)
 	parsers                   = map[string]parserConfig{
 		FlowLogType: {
 			logTypeLabel:    "s3_vpc_flow",
@@ -149,7 +149,7 @@ var (
 			logTypeLabel:    "s3_access",
 			filenameRegex:   s3AccessLogFilenameRegex,
 			ownerLabelKey:   "account_id",
-			timestampFormat: "02/Jan/2006:15:04:05 +0000",
+			timestampFormat: "02/Jan/2006:15:04:05 -0700",
 			timestampRegex:  s3AccessLogTimestampRegex,
 			timestampType:   "string",
 		},
@@ -191,6 +191,7 @@ func parseS3Log(ctx context.Context, b *batch, labels map[string]string, obj io.
 		if err != nil {
 			return err
 		}
+		defer reader.Close()
 	}
 
 	scanner := bufio.NewScanner(reader)
@@ -248,6 +249,9 @@ func parseS3Log(ctx context.Context, b *batch, labels map[string]string, obj io.
 				timestamp, err = time.Parse(parser.timestampFormat, match[1])
 				if err != nil {
 					return err
+				}
+				if timestamp.Location() != time.UTC {
+					timestamp = timestamp.UTC()
 				}
 			case "unix":
 				sec, nsec, err := getUnixSecNsec(match[1])
@@ -324,6 +328,7 @@ func processS3Event(ctx context.Context, ev *events.S3Event, pc Client, log *log
 			return fmt.Errorf("failed to get object %s from bucket %s, %s", labels["key"], labels["bucket"], err)
 		}
 		err = parseS3Log(ctx, batch, labels, obj.Body, log)
+		obj.Body.Close()
 		if err != nil {
 			return err
 		}
@@ -428,11 +433,15 @@ func isGzipCompressed(reader io.ReadCloser) (bool, io.ReadCloser, error) {
 	isGzip := numbers >= 2 && buffer[0] == 0x1f && buffer[1] == 0x8b
 
 	// Since Read is destructive, we need to create a new reader that
-	// includes the bytes we just read plus the rest of the stream
-	newReader := io.NopCloser(io.MultiReader(
-		bytes.NewReader(buffer[:numbers]),
-		reader,
-	))
+	// includes the bytes we just read plus the rest of the stream.
+	// It is wrapped to ensure the underlying reader is closed.
+	newReader := struct {
+		io.Reader
+		io.Closer
+	}{
+		Reader: io.MultiReader(bytes.NewReader(buffer[:numbers]), reader),
+		Closer: reader,
+	}
 
 	// Handle errors after reading the bytes, per Go's recommended pattern
 	if err != nil && err != io.EOF {

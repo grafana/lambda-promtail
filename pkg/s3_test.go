@@ -809,6 +809,7 @@ func Test_parseS3Log(t *testing.T) {
 			if err != nil {
 				t.Errorf("parseS3Log() failed to open test file: %s - %v", tt.args.filename, err)
 			}
+			defer tt.args.obj.Close()
 			buf := &bytes.Buffer{}
 			log := log.NewLogfmtLogger(buf)
 			if err := parseS3Log(context.Background(), tt.args.b, tt.args.labels, tt.args.obj, &log); (err != nil) != tt.wantErr {
