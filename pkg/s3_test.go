@@ -772,15 +772,15 @@ func Test_parseS3Log(t *testing.T) {
 			},
 			wantErr: false,
 		},
-    {
+		{
 			name: "msklogs",
 			args: args{
 				batchSize: 1024,
 				filename:  "../testdata/msklog.log.gz",
-    	  b: &batch{
+				b: &batch{
 					streams: map[string]*logproto.Stream{},
-			  },
-			  labels: map[string]string{
+				},
+				labels: map[string]string{
 					"type":       MskLogType,
 					"src":        "msk-test-name-7f6b9b77-24f9-4921-87b6-d29a6401e292-3",
 					"account_id": "111111111111",
@@ -792,8 +792,8 @@ func Test_parseS3Log(t *testing.T) {
 				time.Date(2025, time.July, 4, 11, 57, 55, 836000000, time.UTC),
 				time.Date(2025, time.July, 4, 11, 57, 55, 839000000, time.UTC),
 			},
-			wantErr: false,       
-    },
+			wantErr: false,
+		},
 		{
 			name: "s3_access",
 			args: args{
