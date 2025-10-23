@@ -33,7 +33,7 @@ jobs:
       - name: AWS Auth Dev
         id: aws-auth-dev
         if: ${{ !startsWith(github.ref, 'refs/tags/v') && github.ref == 'refs/heads/main' }}
-        uses: grafana/shared-workflows/actions/aws-auth@954bcbdf6e64fe612210885b47df771d9d20447b #aws-auth/v1.0.2
+        uses: grafana/shared-workflows/actions/aws-auth@85022085ed5314601c05d10e846de56bdd71e369 # aws-auth/v1.0.3
         with:
           aws-region: "us-east-2"
           role-arn: "arn:aws:iam::410348018613:role/github-actions/lambda-promtail-release-write-role"
@@ -51,7 +51,7 @@ jobs:
       - name: AWS Auth Prod
         id: aws-auth-prod
         if: startsWith(github.ref, 'refs/tags/v')
-        uses: grafana/shared-workflows/actions/aws-auth@954bcbdf6e64fe612210885b47df771d9d20447b #aws-auth/v1.0.2
+        uses: grafana/shared-workflows/actions/aws-auth@85022085ed5314601c05d10e846de56bdd71e369 # aws-auth/v1.0.3
         with:
           aws-region: "us-east-2"
           role-arn: "arn:aws:iam::008923505280:role/github-actions/lambda-promtail-release-write-role"
