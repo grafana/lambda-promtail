@@ -33,7 +33,8 @@ jobs:
       build-website-directory: content/docs/lambda-promtail
       prettier: true
       vale: true
-      readability: true
+      # Doesn't yet work on forks.
+      readability: false
 
   result:
     runs-on: ubuntu-latest
