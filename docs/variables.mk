@@ -1,7 +1,5 @@
 # List of projects to provide to the make-docs script.
 # Format is PROJECT[:[VERSION][:[REPOSITORY][:[DIRECTORY]]]]
-# The following PROJECTS value mounts content into the lambda-promtail project, at the "latest" version, which is the default if not explicitly set.
-# This results in the content being served at /docs/lambda-promtail/latest/.
-# The source of the content is the current repository which is determined by the name of the parent directory of the git root.
-# This overrides the default behavior of assuming the repository directory is the same as the project name.
-PROJECTS := lambda-promtail::$(notdir $(basename $(shell git rev-parse --show-toplevel)))
+# It requires that you have a Loki repository checked out into the same directory as the one containing this repository.
+PROJECTS := loki::$(notdir $(basename $(shell git rev-parse --show-toplevel)../loki)) \
+	arbitrary:$(shell git rev-parse --show-toplevel)/docs/sources:/hugo/content/docs/loki/latest/send-data/lambda-promtail

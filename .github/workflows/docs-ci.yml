@@ -18,7 +18,6 @@ jobs:
         with:
           files: |
             docs/sources/**
-            vale/**
 
   tests:
     needs: changed-files
