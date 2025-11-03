@@ -196,10 +196,7 @@ locals {
 resource "null_resource" "function_binary" {
   count = var.lambda_promtail_image == "" ? 1 : 0
   triggers = {
-    go_sha1s = sha1(join("", concat(
-      [for f in fileset("${path.module}/lambda-promtail", "*.go"): filesha1("${path.module}/lambda-promtail/${f}")],
-      [filesha1("${path.module}/go.mod"), filesha1("${path.module}/go.sum")]
-    )))
+    always_run = timestamp()
   }
 
   provisioner "local-exec" {
