@@ -126,7 +126,7 @@ Lambda-promtail lets you send logs from different services that use S3 as their 
 
 To manage the issue, AWS introduced [S3 event notifications with Event Bridge](https://aws.amazon.com/blogs/aws/new-use-amazon-s3-event-notifications-with-amazon-eventbridge/). In that way, when an object gets created in a S3 bucket, this sends an event to an EventBridge bus, and you can create a rule to send those events to Lambda-promtail.
 
-The [template-eventbridge.yaml](./aws-eventbridge-logs.yaml) CloudFormation template configures Lambda-promtail with EventBridge, for the use case mentioned above:
+The [aws-eventbridge-logs.yaml](./aws-eventbridge-logs.yaml) CloudFormation template configures Lambda-promtail with EventBridge, for the use case mentioned above:
 
 ```bash
 aws cloudformation create-stack --stack-name lambda-promtail-stack --template-body file://template-eventbridge.yaml --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM --region us-east-2 --parameters ParameterKey=WriteAddress,ParameterValue=https://your-loki-url/loki/api/v1/push ParameterKey=Username,ParameterValue=<basic-auth-username> ParameterKey=Password,ParameterValue=<basic-auth-pw> ParameterKey=BearerToken,ParameterValue=<bearer-token> ParameterKey=LambdaPromtailImage,ParameterValue=<ecr-repo>:<tag> ParameterKey=ExtraLabels,ParameterValue="name1,value1,name2,value2" ParameterKey=TenantID,ParameterValue=<value> ParameterKey=SkipTlsVerify,ParameterValue="false" ParameterKey=EventSourceS3Bucket,ParameterValue="alb-logs-bucket-name"
