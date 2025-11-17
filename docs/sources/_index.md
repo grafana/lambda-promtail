@@ -13,7 +13,7 @@ Grafana Loki includes [Terraform](https://www.terraform.io/) and [CloudFormation
 
 ## Deployment
 
-lambda-promtail can easily be deployed via provided [Terraform](https://github.com/grafana/lambda-promtail/blob/main/tools/lambda-promtail/main.tf) and [CloudFormation](https://github.com/grafana/lambda-promtail/blob/main/lambda-promtail.yaml) files. The Terraform deployment also pulls variable values defined from [variables.tf](https://github.com/grafana/lambda-promtail/blob/main/variables.tf).
+lambda-promtail can easily be deployed via provided [Terraform](https://github.com/grafana/lambda-promtail/blob/main/main.tf) and [CloudFormation](https://github.com/grafana/lambda-promtail/blob/main/lambda-promtail.yaml) files. The Terraform deployment also pulls variable values defined from [variables.tf](https://github.com/grafana/lambda-promtail/blob/main/variables.tf).
 
 For both deployment types there are a few values that must be defined:
 
