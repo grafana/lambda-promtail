@@ -53,6 +53,7 @@ const (
 	WafLogType              string = "WAFLogs"
 	GuardDutyLogType        string = "GuardDuty"
 	MskLogType              string = "KafkaBrokerLogs"
+	PerimeterXLogType       string = "PerimeterX"
 )
 
 var (
@@ -96,6 +97,8 @@ var (
 	guarddutyFilenameRegex   = regexp.MustCompile(`AWSLogs\/(?P<account_id>\d+)\/(?P<type>GuardDuty)\/(?P<region>[\w-]+)\/(?P<year>\d+)\/(?P<month>\d+)\/(?P<day>\d+)\/.+`)
 	mskFilenameRegex         = regexp.MustCompile(`AWSLogs\/(?P<account_id>\d+)\/(?P<type>KafkaBrokerLogs)\/(?P<region>[\w-]+)\/(?P<cluster_name>[a-zA-Z0-9-]+)-(?P<cluster_uuid>[a-f0-9-]+)\/(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})-(?P<hour>\d{2})\/Broker-(?P<broker_id>\d+)_(?P<log_hour>\d{2})-(?P<log_minute>\d{2})_[a-f0-9]+\.log\.gz`)
 	mskTimestampRegex        = regexp.MustCompile(`^\[(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3})\]`)
+	pxFilenameRegex          = regexp.MustCompile(`^.*\/PX.+?\.gz$`) // Example: 2025/11/14/p-x/PXZe8Bjuw9_1762964085725753111.json.gz
+	pxTimestampRegex         = regexp.MustCompile(`"timestamp"\s*:\s*"(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z)"`)
 	parsers                  = map[string]parserConfig{
 		FlowLogType: {
 			logTypeLabel:    "s3_vpc_flow",
@@ -150,6 +153,15 @@ var (
 			ownerLabelKey:   "account_id",
 			timestampRegex:  mskTimestampRegex,
 			timestampFormat: "2006-01-02 15:04:05,000",
+			timestampType:   "string",
+			skipHeaderCount: 0,
+		},
+		PerimeterXLogType: {
+			logTypeLabel:    "s3_perimeter_x",
+			filenameRegex:   pxFilenameRegex,
+			ownerLabelKey:   "account_id",
+			timestampRegex:  pxTimestampRegex,
+			timestampFormat: "2006-01-02T15:04:05Z",
 			timestampType:   "string",
 			skipHeaderCount: 0,
 		},

@@ -147,7 +147,7 @@ variable "relabel_configs" {
 variable "omit_extra_labels_prefix" {
   type        = bool
   description = "Whether or not to omit the prefix `__extra_` from extra labels defined in the variable `extra_labels`."
-  default     = false
+  default     = true
 }
 
 variable "batch_size" {
