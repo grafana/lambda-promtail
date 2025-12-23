@@ -37,3 +37,15 @@ func (c *testSecretsClient) FetchFromAWSSSMParameterStore(_ context.Context, par
 
 	return c.ReturnValue, nil
 }
+
+func (c *testSecretsClient) FetchFromVault(ctx context.Context, key string) (string, error) {
+	return "", nil
+}
+
+func (c *testSecretsClient) HasVaultConfig() bool {
+	return false
+}
+
+func (c *testSecretsClient) SetVaultConfig(config *VaultKVCredentials) {
+	// TODO
+}
