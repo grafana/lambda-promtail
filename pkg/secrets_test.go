@@ -42,7 +42,7 @@ func (c *testSecretsClient) FetchFromAWSSSMParameterStore(_ context.Context, par
 	return c.ReturnValue, nil
 }
 
-func (c *testSecretsClient) FetchFromVault(ctx context.Context, key string) (string, error) {
+func (c *testSecretsClient) FetchFromVault(_ context.Context, key string) (string, error) {
 	c.CallsFetchFromVault++
 
 	if c.VaultCredentials == nil {
