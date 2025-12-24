@@ -20,6 +20,7 @@ func Test_loadSensitiveEnv(t *testing.T) {
 		assert.Equal(t, "BAR", value)
 		assert.Equal(t, 0, secretsClient.CallsFetchFromAWSSecretsManager)
 		assert.Equal(t, 0, secretsClient.CallsFetchFromAWSSSMParameterStore)
+		assert.Equal(t, 0, secretsClient.CallsFetchFromVault)
 	})
 
 	t.Run("should not return an error if env is not set", func(t *testing.T) {
@@ -31,6 +32,7 @@ func Test_loadSensitiveEnv(t *testing.T) {
 		assert.Empty(t, value)
 		assert.Equal(t, 0, secretsClient.CallsFetchFromAWSSecretsManager)
 		assert.Equal(t, 0, secretsClient.CallsFetchFromAWSSSMParameterStore)
+		assert.Equal(t, 0, secretsClient.CallsFetchFromVault)
 	})
 
 	t.Run("should return an error if the env variable contains an invalid arn", func(t *testing.T) {
@@ -43,6 +45,7 @@ func Test_loadSensitiveEnv(t *testing.T) {
 		assert.Empty(t, value)
 		assert.Equal(t, 0, secretsClient.CallsFetchFromAWSSecretsManager)
 		assert.Equal(t, 0, secretsClient.CallsFetchFromAWSSSMParameterStore)
+		assert.Equal(t, 0, secretsClient.CallsFetchFromVault)
 	})
 
 	t.Run("should call FetchFromAWSSecretsManager if the env variable contains a secret ARN", func(t *testing.T) {
@@ -57,6 +60,7 @@ func Test_loadSensitiveEnv(t *testing.T) {
 		assert.Equal(t, "bar", value)
 		assert.Equal(t, 1, secretsClient.CallsFetchFromAWSSecretsManager)
 		assert.Equal(t, 0, secretsClient.CallsFetchFromAWSSSMParameterStore)
+		assert.Equal(t, 0, secretsClient.CallsFetchFromVault)
 	})
 
 	t.Run("should call FetchFromAWSSSMParameterStore if the env variable contains a parameter ARN", func(t *testing.T) {
@@ -71,5 +75,42 @@ func Test_loadSensitiveEnv(t *testing.T) {
 		assert.Equal(t, "bar", value)
 		assert.Equal(t, 0, secretsClient.CallsFetchFromAWSSecretsManager)
 		assert.Equal(t, 1, secretsClient.CallsFetchFromAWSSSMParameterStore)
+		assert.Equal(t, 0, secretsClient.CallsFetchFromVault)
+	})
+
+	t.Run("should call FetchFromVault if Vault is configured", func(t *testing.T) {
+		t.Setenv("FOO", "vault_key")
+		secretsClient := &testSecretsClient{
+			VaultConfigured: true,
+			ExpectedArn:     "vault_key",
+			ReturnValue:     "bar",
+		}
+		secretsClient.SetVaultConfig(&VaultKVCredentials{
+			role:  "role_foo",
+			mount: "mnt_bar",
+			path:  "path_name",
+		})
+
+		value, err := loadSensitiveEnv(ctx, secretsClient, "FOO")
+		assert.NoError(t, err)
+		assert.Equal(t, "bar", value)
+		assert.Equal(t, 0, secretsClient.CallsFetchFromAWSSecretsManager)
+		assert.Equal(t, 0, secretsClient.CallsFetchFromAWSSSMParameterStore)
+		assert.Equal(t, 1, secretsClient.CallsFetchFromVault)
+	})
+
+	t.Run("should return an error if Vault is intended to be used but the Vault config is not set", func(t *testing.T) {
+		t.Setenv("FOO", "vault_key")
+		secretsClient := &testSecretsClient{
+			VaultConfigured: true,
+		}
+
+		value, err := loadSensitiveEnv(ctx, secretsClient, "FOO")
+
+		assert.Error(t, err)
+		assert.Empty(t, value)
+		assert.Equal(t, 0, secretsClient.CallsFetchFromAWSSecretsManager)
+		assert.Equal(t, 0, secretsClient.CallsFetchFromAWSSSMParameterStore)
+		assert.Equal(t, 1, secretsClient.CallsFetchFromVault)
 	})
 }

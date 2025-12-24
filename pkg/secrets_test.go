@@ -6,16 +6,20 @@ import (
 )
 
 var (
-	_             secretFetcher = &testSecretsClient{}
-	errInvalidArn               = errors.New("invalid arn")
+	_                secretFetcher = &testSecretsClient{}
+	errInvalidArn                  = errors.New("invalid arn")
+	errNoVaultConfig               = errors.New("no vault config")
 )
 
 type testSecretsClient struct {
 	CallsFetchFromAWSSecretsManager    int
 	CallsFetchFromAWSSSMParameterStore int
+	CallsFetchFromVault                int
 
-	ExpectedArn string
-	ReturnValue string
+	ExpectedArn      string
+	ReturnValue      string
+	VaultConfigured  bool
+	VaultCredentials *VaultKVCredentials
 }
 
 func (c *testSecretsClient) FetchFromAWSSecretsManager(_ context.Context, secretArn string) (string, error) {
@@ -36,4 +40,25 @@ func (c *testSecretsClient) FetchFromAWSSSMParameterStore(_ context.Context, par
 	}
 
 	return c.ReturnValue, nil
+}
+
+func (c *testSecretsClient) FetchFromVault(_ context.Context, key string) (string, error) {
+	c.CallsFetchFromVault++
+
+	if c.VaultCredentials == nil {
+		return "", errNoVaultConfig
+	}
+	if c.ExpectedArn != "" && key != c.ExpectedArn {
+		return "", errInvalidArn
+	}
+
+	return c.ReturnValue, nil
+}
+
+func (c *testSecretsClient) HasVaultConfig() bool {
+	return c.VaultConfigured
+}
+
+func (c *testSecretsClient) SetVaultConfig(config *VaultKVCredentials) {
+	c.VaultCredentials = config
 }
