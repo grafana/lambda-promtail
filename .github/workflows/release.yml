@@ -24,11 +24,11 @@ jobs:
         run: echo "VERSION=$(./tools/version)" >> $GITHUB_ENV
 
       - name: Build
-        run: GOOS=linux CGO_ENABLED=0 go build -o ./main ./...
+        run: GOOS=linux CGO_ENABLED=0 go build -o ./bootstrap ./...
 
       - name: Package
         shell: bash
-        run: zip "lambda-promtail-$VERSION.zip" main
+        run: zip "lambda-promtail-$VERSION.zip" bootstrap
 
       - name: AWS Auth Dev
         id: aws-auth-dev
