@@ -11,6 +11,8 @@ import (
 )
 
 func Test_parseCWEvent(t *testing.T) {
+	process, _ := ParsePipelineConfigs("", nil, nil)
+
 	tests := []struct {
 		name           string
 		b              *batch
@@ -20,7 +22,8 @@ func Test_parseCWEvent(t *testing.T) {
 		{
 			name: "cloudwatch",
 			b: &batch{
-				streams: map[string]*logproto.Stream{},
+				streams:   map[string]*logproto.Stream{},
+				processor: process,
 			},
 			expectedStream: `{__aws_cloudwatch_log_group="testLogGroup", __aws_cloudwatch_owner="123456789123", __aws_log_type="cloudwatch"}`,
 			keepStream:     false,
@@ -28,7 +31,8 @@ func Test_parseCWEvent(t *testing.T) {
 		{
 			name: "cloudwatch_keepStream",
 			b: &batch{
-				streams: map[string]*logproto.Stream{},
+				streams:   map[string]*logproto.Stream{},
+				processor: process,
 			},
 			expectedStream: `{__aws_cloudwatch_log_group="testLogGroup", __aws_cloudwatch_log_stream="testLogStream", __aws_cloudwatch_owner="123456789123", __aws_log_type="cloudwatch"}`,
 			keepStream:     true,

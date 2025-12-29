@@ -17,6 +17,8 @@ import (
 	"github.com/grafana/dskit/backoff"
 	"github.com/prometheus/common/model"
 
+	"github.com/grafana/loki/v3/clients/pkg/logentry/stages"
+	"github.com/grafana/loki/v3/clients/pkg/promtail/api"
 	"github.com/grafana/loki/v3/pkg/logproto"
 )
 
@@ -37,15 +39,17 @@ type entry struct {
 }
 
 type batch struct {
-	streams map[string]*logproto.Stream
-	size    int
-	client  Client
+	streams   map[string]*logproto.Stream
+	size      int
+	client    Client
+	processor *LokiStages
 }
 
-func newBatch(ctx context.Context, pClient Client, entries ...entry) (*batch, error) {
+func newBatch(ctx context.Context, pClient Client, processingPipeline *LokiStages, entries ...entry) (*batch, error) {
 	b := &batch{
-		streams: map[string]*logproto.Stream{},
-		client:  pClient,
+		streams:   map[string]*logproto.Stream{},
+		client:    pClient,
+		processor: processingPipeline,
 	}
 
 	for _, entry := range entries {
@@ -73,7 +77,23 @@ func (b *batch) add(ctx context.Context, e entry) error {
 		stream = b.streams[labels]
 	}
 
-	stream.Entries = append(stream.Entries, e.entry)
+	// Apply pipeline stages to entry
+	stageEntry := stages.Entry{
+		Extracted: map[string]interface{}{},
+		Entry:     api.Entry{Labels: e.labels, Entry: e.entry},
+	}
+	for labelName, labelValue := range e.labels {
+		stageEntry.Extracted[string(labelName)] = string(labelValue)
+	}
+	stageEntry = b.processor.Process(stageEntry)
+	pushE := logproto.Entry{
+		Timestamp:          stageEntry.Timestamp,
+		Line:               stageEntry.Line,
+		StructuredMetadata: stageEntry.StructuredMetadata,
+		Parsed:             stageEntry.Parsed,
+	}
+
+	stream.Entries = append(stream.Entries, pushE)
 	b.size += len(e.entry.Line)
 
 	if b.size > batchSize {

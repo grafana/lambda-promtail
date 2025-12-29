@@ -19,6 +19,8 @@ func (t testPromtailClient) sendToPromtail(_ context.Context, _ *batch) error {
 
 func Test_processEventBridgeEvent(t *testing.T) {
 	logger := log.NewNopLogger()
+	process, _ := ParsePipelineConfigs("", logger, nil)
+
 	t.Run("s3 object created event", func(t *testing.T) {
 		bs, err := os.ReadFile("../testdata/eventbridge-s3-event.json")
 		require.NoError(t, err)
@@ -26,7 +28,7 @@ func Test_processEventBridgeEvent(t *testing.T) {
 		var ebEvent events.CloudWatchEvent
 		require.NoError(t, json.Unmarshal(bs, &ebEvent))
 
-		processor := s3EventProcessor(func(_ context.Context, ev *events.S3Event, _ Client, _ *log.Logger) error {
+		processor := s3EventProcessor(func(_ context.Context, ev *events.S3Event, _ Client, _ *LokiStages, _ *log.Logger) error {
 			require.Len(t, ev.Records, 1)
 			require.Equal(t, events.S3EventRecord{
 				AWSRegion: "us-east-2",
@@ -42,7 +44,7 @@ func Test_processEventBridgeEvent(t *testing.T) {
 			return nil
 		})
 
-		err = processEventBridgeEvent(context.Background(), &ebEvent, testPromtailClient{}, &logger, processor)
+		err = processEventBridgeEvent(context.Background(), &ebEvent, testPromtailClient{}, process, &logger, processor)
 		require.NoError(t, err)
 
 		t.Run("s3 object created event", func(t *testing.T) {
@@ -53,11 +55,11 @@ func Test_processEventBridgeEvent(t *testing.T) {
 				DetailType: "Object Restore Initiated",
 			}
 
-			processor := s3EventProcessor(func(_ context.Context, _ *events.S3Event, _ Client, _ *log.Logger) error {
+			processor := s3EventProcessor(func(_ context.Context, _ *events.S3Event, _ Client, _ *LokiStages, _ *log.Logger) error {
 				return nil
 			})
 
-			err = processEventBridgeEvent(context.Background(), &ebEvent, testPromtailClient{}, &logger, processor)
+			err = processEventBridgeEvent(context.Background(), &ebEvent, testPromtailClient{}, process, &logger, processor)
 			require.Error(t, err, "expected process to fail due to unsupported event type")
 		})
 	})
