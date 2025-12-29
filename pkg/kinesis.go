@@ -49,8 +49,8 @@ func parseKinesisEvent(ctx context.Context, b *batch, ev *events.KinesisEvent) e
 	return nil
 }
 
-func processKinesisEvent(ctx context.Context, ev *events.KinesisEvent, pClient Client) error {
-	batch, _ := newBatch(ctx, pClient)
+func processKinesisEvent(ctx context.Context, ev *events.KinesisEvent, pClient Client, processingPipeline *LokiStages) error {
+	batch, _ := newBatch(ctx, pClient, processingPipeline)
 
 	err := parseKinesisEvent(ctx, batch, ev)
 	if err != nil {
