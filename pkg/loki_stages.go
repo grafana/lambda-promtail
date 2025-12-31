@@ -50,14 +50,6 @@ func NewLokiStages(logger log.Logger, stgs []map[string]any, jobName *string, re
 	}, nil
 }
 
-// Run provides the input channel of entries to each configured stage to process asynchronously
-func (s *LokiStages) Run(in chan stages.Entry) chan stages.Entry {
-	for _, m := range s.lokiStages {
-		in = m.Run(in)
-	}
-	return in
-}
-
 // Process processes a single entry synchronously
 func (s *LokiStages) Process(entry stages.Entry) stages.Entry {
 	timeout := 1 * time.Second

@@ -116,8 +116,8 @@ func TestParsePipelineConfigs(t *testing.T) {
 	}
 }
 
-// TestLokiStages_Run validates the Run function executes correctly with relevant configured stages
-func TestLokiStages_Run(t *testing.T) {
+// TestLokiStages_Process validates the Process function executes correctly with relevant configured stages
+func TestLokiStages_Process(t *testing.T) {
 	logger := log.NewNopLogger()
 	registerer := prometheus.NewRegistry()
 
