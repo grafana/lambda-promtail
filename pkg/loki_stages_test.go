@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/go-kit/log"
-	"github.com/grafana/loki/pkg/push"
 	"github.com/grafana/loki/v3/clients/pkg/logentry/stages"
 	"github.com/grafana/loki/v3/clients/pkg/promtail/api"
 	"github.com/grafana/loki/v3/pkg/logproto"
@@ -13,6 +12,8 @@ import (
 	"github.com/prometheus/common/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/grafana/loki/pkg/push"
 )
 
 // TestParsePipelineConfigs validates that the parser is able to handle common stage configurations
@@ -198,7 +199,7 @@ func TestLokiStages_Process(t *testing.T) {
 				},
 			},
 			validateOutput: func(t *testing.T, output stages.Entry) {
-				labels := output.Entry.Labels
+				labels := output.Labels
 				assert.Equal(t, model.LabelValue("error"), labels["level"])
 				assert.Equal(t, model.LabelValue("api"), labels["service"])
 			},
@@ -297,7 +298,7 @@ func TestLokiStages_Process(t *testing.T) {
 			validateOutput: func(t *testing.T, output stages.Entry) {
 				assert.Equal(t, "warning", output.Extracted["severity"])
 				assert.Equal(t, "webapp", output.Extracted["app"])
-				labels := output.Entry.Labels
+				labels := output.Labels
 				assert.Equal(t, model.LabelValue("warning"), labels["severity"])
 				assert.Equal(t, model.LabelValue("webapp"), labels["app"])
 			},
