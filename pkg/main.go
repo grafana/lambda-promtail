@@ -279,7 +279,7 @@ func handler(ctx context.Context, ev map[string]interface{}) error {
 		},
 	}, log)
 
-	logEntryPipeline, err := ParsePipelineConfigs(os.Getenv("LOGENTRY_CONFIGS"), *log, nil)
+	lokiStageConfigs, err := ParsePipelineConfigs(os.Getenv("LOKI_STAGE_CONFIGS"), *log, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -292,13 +292,13 @@ func handler(ctx context.Context, ev map[string]interface{}) error {
 
 	switch evt := event.(type) {
 	case *events.CloudWatchEvent:
-		err = processEventBridgeEvent(ctx, evt, pClient, logEntryPipeline, log, processS3Event)
+		err = processEventBridgeEvent(ctx, evt, pClient, lokiStageConfigs, log, processS3Event)
 	case *events.S3Event:
-		err = processS3Event(ctx, evt, pClient, logEntryPipeline, log)
+		err = processS3Event(ctx, evt, pClient, lokiStageConfigs, log)
 	case *events.CloudwatchLogsEvent:
-		err = processCWEvent(ctx, evt, pClient, logEntryPipeline)
+		err = processCWEvent(ctx, evt, pClient, lokiStageConfigs)
 	case *events.KinesisEvent:
-		err = processKinesisEvent(ctx, evt, pClient, logEntryPipeline)
+		err = processKinesisEvent(ctx, evt, pClient, lokiStageConfigs)
 	case *events.SQSEvent:
 		err = processSQSEvent(ctx, evt, handler)
 	case *events.SNSEvent:
