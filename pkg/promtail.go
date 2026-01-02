@@ -86,18 +86,22 @@ func (b *batch) add(ctx context.Context, e entry) error {
 		stageEntry.Extracted[string(labelName)] = string(labelValue)
 	}
 	stageEntry = b.processor.Process(stageEntry)
-	pushE := logproto.Entry{
-		Timestamp:          stageEntry.Timestamp,
-		Line:               stageEntry.Line,
-		StructuredMetadata: stageEntry.StructuredMetadata,
-		Parsed:             stageEntry.Parsed,
-	}
 
-	stream.Entries = append(stream.Entries, pushE)
-	b.size += len(e.entry.Line)
+	// Check for dropped entries
+	if stageEntry.Line != "" {
+		pushE := logproto.Entry{
+			Timestamp:          stageEntry.Timestamp,
+			Line:               stageEntry.Line,
+			StructuredMetadata: stageEntry.StructuredMetadata,
+			Parsed:             stageEntry.Parsed,
+		}
 
-	if b.size > batchSize {
-		return b.flushBatch(ctx)
+		stream.Entries = append(stream.Entries, pushE)
+		b.size += len(e.entry.Line)
+
+		if b.size > batchSize {
+			return b.flushBatch(ctx)
+		}
 	}
 
 	return nil
