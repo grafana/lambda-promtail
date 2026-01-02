@@ -177,7 +177,3 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-//replace k8s.io/client-go => k8s.io/client-go v0.21.0
-// Using a fork of Prometheus with Mimir-specific changes.
-// replace github.com/prometheus/prometheus => github.com/prometheus/prometheus v0.302.1
