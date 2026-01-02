@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
 	"github.com/grafana/loki/v3/clients/pkg/logentry/stages"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -17,6 +18,7 @@ var (
 
 type LokiStages struct {
 	lokiStages []stages.Stage
+	logger     log.Logger
 }
 
 // ParsePipelineConfigs parses the LOKI_STAGE_CONFIGS environment variable
@@ -47,6 +49,7 @@ func NewLokiStages(logger log.Logger, stgs []map[string]any, jobName *string, re
 	}
 	return &LokiStages{
 		lokiStages: st,
+		logger:     logger,
 	}, nil
 }
 
@@ -78,6 +81,7 @@ func (s *LokiStages) Process(entry stages.Entry) stages.Entry {
 				}
 				entry = processedEntry
 			case <-time.After(timeout):
+				level.Warn(s.logger).Log("err", "timed out whilst processing log line")
 				return stages.Entry{}
 			}
 		}
