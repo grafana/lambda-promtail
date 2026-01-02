@@ -613,6 +613,7 @@ func Test_parseS3Log(t *testing.T) {
 		filename  string
 		batchSize int
 	}
+	process, _ := ParsePipelineConfigs("", nil, nil)
 	tests := []struct {
 		name               string
 		args               args
@@ -628,7 +629,8 @@ func Test_parseS3Log(t *testing.T) {
 				batchSize: 1024, // Set large enough we don't try and send to promtail
 				filename:  "../testdata/vpcflowlog.log.gz",
 				b: &batch{
-					streams: map[string]*logproto.Stream{},
+					streams:   map[string]*logproto.Stream{},
+					processor: process,
 				},
 				labels: map[string]string{
 					"type":       FlowLogType,
@@ -646,7 +648,8 @@ func Test_parseS3Log(t *testing.T) {
 				batchSize: 1024, // Set large enough we don't try and send to promtail
 				filename:  "../testdata/albaccesslog.log.gz",
 				b: &batch{
-					streams: map[string]*logproto.Stream{},
+					streams:   map[string]*logproto.Stream{},
+					processor: process,
 				},
 				labels: map[string]string{
 					"type":       LbLogType,
@@ -668,7 +671,8 @@ func Test_parseS3Log(t *testing.T) {
 				batchSize: 1024, // Set large enough we don't try and send to promtail
 				filename:  "../testdata/nlbaccesslog.log.gz",
 				b: &batch{
-					streams: map[string]*logproto.Stream{},
+					streams:   map[string]*logproto.Stream{},
+					processor: process,
 				},
 				labels: map[string]string{
 					"account_id": "123456789",
@@ -695,7 +699,8 @@ func Test_parseS3Log(t *testing.T) {
 				batchSize: 131072, // Set large enough we don't try and send to promtail
 				filename:  "../testdata/cloudtrail-log-file.json.gz",
 				b: &batch{
-					streams: map[string]*logproto.Stream{},
+					streams:   map[string]*logproto.Stream{},
+					processor: process,
 				},
 				labels: map[string]string{
 					"type":       CloudTrailLogType,
@@ -717,7 +722,8 @@ func Test_parseS3Log(t *testing.T) {
 				batchSize: 131072, // Set large enough we don't try and send to promtail
 				filename:  "../testdata/cloudtrail-log-file.json.gz",
 				b: &batch{
-					streams: map[string]*logproto.Stream{},
+					streams:   map[string]*logproto.Stream{},
+					processor: process,
 				},
 				labels: map[string]string{
 					"type":       CloudTrailDigestLogType,
@@ -735,7 +741,8 @@ func Test_parseS3Log(t *testing.T) {
 				batchSize: 131072, // Set large enough we don't try and send to promtail
 				filename:  "../testdata/cloudfront.log.gz",
 				b: &batch{
-					streams: map[string]*logproto.Stream{},
+					streams:   map[string]*logproto.Stream{},
+					processor: process,
 				},
 				labels: map[string]string{
 					"type":   CloudFrontLogType,
@@ -757,7 +764,8 @@ func Test_parseS3Log(t *testing.T) {
 				batchSize: 131072, // Set large enough we don't try and send to promtail
 				filename:  "../testdata/waflog.log.gz",
 				b: &batch{
-					streams: map[string]*logproto.Stream{},
+					streams:   map[string]*logproto.Stream{},
+					processor: process,
 				},
 				labels: map[string]string{
 					"account_id": "11111111111",
@@ -778,7 +786,8 @@ func Test_parseS3Log(t *testing.T) {
 				batchSize: 1024,
 				filename:  "../testdata/msklog.log.gz",
 				b: &batch{
-					streams: map[string]*logproto.Stream{},
+					streams:   map[string]*logproto.Stream{},
+					processor: process,
 				},
 				labels: map[string]string{
 					"type":       MskLogType,
@@ -800,7 +809,8 @@ func Test_parseS3Log(t *testing.T) {
 				batchSize: 131072, // Set large enough we don't try and send to promtail
 				filename:  "../testdata/s3accesslog.log",
 				b: &batch{
-					streams: map[string]*logproto.Stream{},
+					streams:   map[string]*logproto.Stream{},
+					processor: process,
 				},
 				labels: map[string]string{
 					"account_id": "123456789012",
@@ -821,7 +831,8 @@ func Test_parseS3Log(t *testing.T) {
 				batchSize: 131072, // Set large enough we don't try and send to promtail
 				filename:  "../testdata/kinesis-event.json",
 				b: &batch{
-					streams: map[string]*logproto.Stream{},
+					streams:   map[string]*logproto.Stream{},
+					processor: process,
 				},
 				labels: map[string]string{
 					"bucket":        "missing_parser",
@@ -841,7 +852,8 @@ func Test_parseS3Log(t *testing.T) {
 				batchSize: 131072, // Set large enough we don't try and send to promtail
 				filename:  "../testdata/waflog.log.gz",
 				b: &batch{
-					streams: map[string]*logproto.Stream{},
+					streams:   map[string]*logproto.Stream{},
+					processor: process,
 				},
 				labels: map[string]string{
 					"account_id": "11111111111",
