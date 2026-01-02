@@ -77,31 +77,36 @@ func (b *batch) add(ctx context.Context, e entry) error {
 		stream = b.streams[labels]
 	}
 
-	// Apply pipeline stages to entry
-	stageEntry := stages.Entry{
-		Extracted: map[string]interface{}{},
-		Entry:     api.Entry{Labels: e.labels, Entry: e.entry},
-	}
-	for labelName, labelValue := range e.labels {
-		stageEntry.Extracted[string(labelName)] = string(labelValue)
-	}
-	stageEntry = b.processor.Process(stageEntry)
-
-	// Check for dropped entries
-	if stageEntry.Line != "" {
-		pushE := logproto.Entry{
-			Timestamp:          stageEntry.Timestamp,
-			Line:               stageEntry.Line,
-			StructuredMetadata: stageEntry.StructuredMetadata,
-			Parsed:             stageEntry.Parsed,
+	if b.processor.Size() > 0 {
+		// Apply pipeline stages to entry
+		stageEntry := stages.Entry{
+			Extracted: map[string]interface{}{},
+			Entry:     api.Entry{Labels: e.labels, Entry: e.entry},
 		}
+		for labelName, labelValue := range e.labels {
+			stageEntry.Extracted[string(labelName)] = string(labelValue)
+		}
+		stageEntry = b.processor.Process(stageEntry)
 
-		stream.Entries = append(stream.Entries, pushE)
+		// Check for dropped entries
+		if stageEntry.Line != "" {
+			pushE := logproto.Entry{
+				Timestamp:          stageEntry.Timestamp,
+				Line:               stageEntry.Line,
+				StructuredMetadata: stageEntry.StructuredMetadata,
+				Parsed:             stageEntry.Parsed,
+			}
+
+			stream.Entries = append(stream.Entries, pushE)
+			b.size += len(pushE.Line)
+		}
+	} else {
+		stream.Entries = append(stream.Entries, e.entry)
 		b.size += len(e.entry.Line)
+	}
 
-		if b.size > batchSize {
-			return b.flushBatch(ctx)
-		}
+	if b.size > batchSize {
+		return b.flushBatch(ctx)
 	}
 
 	return nil
