@@ -49,6 +49,24 @@ func setupArguments(ctx context.Context, secretFetcher secretFetcher) {
 		panic(errors.New("required environmental variable WRITE_ADDRESS not present, format: https://<hostname>/loki/api/v1/push"))
 	}
 
+	vaultRole, ok := os.LookupEnv("VAULT_ROLE")
+	if ok {
+		fmt.Println("using Vault configuration with role: ", vaultRole)
+		vaultMount, ok := os.LookupEnv("VAULT_MOUNT")
+		if !ok {
+			panic(errors.New("VAULT_ROLE provided, but required environment variable VAULT_MOUNT not provided"))
+		}
+		vaultPath, ok := os.LookupEnv("VAULT_PATH")
+		if !ok {
+			panic(errors.New("VAULT_ROLE provided, but required environment variable VAULT_PATH not provided"))
+		}
+		secretFetcher.SetVaultConfig(&VaultKVCredentials{
+			role:  vaultRole,
+			mount: vaultMount,
+			path:  vaultPath,
+		})
+	}
+
 	var err error
 	writeAddress, err = url.Parse(addr)
 	if err != nil {

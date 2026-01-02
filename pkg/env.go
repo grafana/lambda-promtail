@@ -11,12 +11,19 @@ import (
 type secretFetcher interface {
 	FetchFromAWSSecretsManager(ctx context.Context, secretArn string) (string, error)
 	FetchFromAWSSSMParameterStore(ctx context.Context, parameterArn string) (string, error)
+	FetchFromVault(ctx context.Context, key string) (string, error)
+	HasVaultConfig() bool
+	SetVaultConfig(config *VaultKVCredentials)
 }
 
 func loadSensitiveEnv(ctx context.Context, secrets secretFetcher, name string) (string, error) {
 	envValue, ok := os.LookupEnv(name)
 	if !ok {
 		return "", nil
+	}
+
+	if secrets.HasVaultConfig() {
+		return secrets.FetchFromVault(ctx, envValue)
 	}
 
 	if arn.IsARN(envValue) {
