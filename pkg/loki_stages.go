@@ -81,7 +81,7 @@ func (s *LokiStages) Process(entry stages.Entry) stages.Entry {
 				}
 				entry = processedEntry
 			case <-time.After(timeout):
-				level.Warn(s.logger).Log("err", "timed out whilst processing log line")
+				level.Warn(s.logger).Log("err", "timed out whilst processing log line") // nolint:errcheck
 				return stages.Entry{}
 			}
 		}
