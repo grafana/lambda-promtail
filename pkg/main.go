@@ -178,16 +178,13 @@ func applyRelabelConfigs(labels model.LabelSet) model.LabelSet {
 	}
 
 	// Convert model.LabelSet to prommodel.Labels
-	promLabels := make([]prommodel.Label, 0, len(labels))
+	builder := prommodel.NewScratchBuilder(len(labels))
 	for name, value := range labels {
-		promLabels = append(promLabels, prommodel.Label{
-			Name:  string(name),
-			Value: string(value),
-		})
+		builder.Add(string(name), string(value))
 	}
 
 	// Sort labels as required by Process
-	promLabels = prommodel.New(promLabels...)
+	promLabels := builder.Labels()
 
 	// Apply relabeling
 	processedLabels, keep := relabel.Process(promLabels, relabelConfigs...)
@@ -197,9 +194,9 @@ func applyRelabelConfigs(labels model.LabelSet) model.LabelSet {
 
 	// Convert back to model.LabelSet
 	result := make(model.LabelSet)
-	for _, l := range processedLabels {
+	processedLabels.Range(func(l prommodel.Label) {
 		result[model.LabelName(l.Name)] = model.LabelValue(l.Value)
-	}
+	})
 
 	return result
 }
