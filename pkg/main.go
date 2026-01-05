@@ -114,7 +114,7 @@ func setupArguments(ctx context.Context, secretFetcher secretFetcher) {
 		batchSize, _ = strconv.Atoi(batch)
 	}
 
-	pipelineTimeout = 1 * time.Second
+	pipelineTimeout = defaultPipelineTimeout
 	timeoutStr := os.Getenv("PIPELINE_TIMEOUT")
 	if timeoutStr != "" {
 		if timeout, err := time.ParseDuration(timeoutStr); err == nil {

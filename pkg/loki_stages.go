@@ -13,8 +13,9 @@ import (
 )
 
 var (
-	JobName        = "LAMBDA-PROMTAIL"
-	defaultTimeout = 1 * time.Second
+	JobName = "LAMBDA-PROMTAIL"
+
+	defaultPipelineTimeout = 1 * time.Second
 )
 
 type LokiStages struct {
@@ -56,7 +57,7 @@ func NewLokiStages(logger log.Logger, stgs []map[string]any, jobName *string, re
 
 // Process processes a single entry synchronously
 func (s *LokiStages) Process(entry stages.Entry) stages.Entry {
-	timeout := defaultTimeout
+	timeout := defaultPipelineTimeout
 	if pipelineTimeout != 0 {
 		timeout = pipelineTimeout
 	}
