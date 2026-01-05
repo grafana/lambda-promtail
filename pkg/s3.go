@@ -320,8 +320,8 @@ func getLabels(record events.S3EventRecord) (map[string]string, error) {
 	return labels, nil
 }
 
-func processS3Event(ctx context.Context, ev *events.S3Event, pc Client, log *log.Logger) error {
-	batch, err := newBatch(ctx, pc)
+func processS3Event(ctx context.Context, ev *events.S3Event, pc Client, processingPipeline *LokiStages, log *log.Logger) error {
+	batch, err := newBatch(ctx, pc, processingPipeline)
 	if err != nil {
 		return err
 	}

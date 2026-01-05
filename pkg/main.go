@@ -9,6 +9,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-kit/log/level"
 	"github.com/grafana/dskit/backoff"
@@ -35,6 +36,7 @@ var (
 	username, password, extraLabelsRaw, dropLabelsRaw, tenantID, bearerToken string
 	keepStream                                                               bool
 	batchSize                                                                int
+	pipelineTimeout                                                          time.Duration
 	s3Clients                                                                map[string]*s3.Client
 	extraLabels                                                              model.LabelSet
 	dropLabels                                                               []model.LabelName
@@ -110,6 +112,14 @@ func setupArguments(ctx context.Context, secretFetcher secretFetcher) {
 	batchSize = 131072
 	if batch != "" {
 		batchSize, _ = strconv.Atoi(batch)
+	}
+
+	pipelineTimeout = defaultPipelineTimeout
+	timeoutStr := os.Getenv("PIPELINE_TIMEOUT")
+	if timeoutStr != "" {
+		if timeout, err := time.ParseDuration(timeoutStr); err == nil {
+			pipelineTimeout = timeout
+		}
 	}
 
 	printLogLine = true
@@ -269,6 +279,11 @@ func handler(ctx context.Context, ev map[string]interface{}) error {
 		},
 	}, log)
 
+	lokiStageConfigs, err := ParsePipelineConfigs(os.Getenv("LOKI_STAGE_CONFIGS"), *log, nil)
+	if err != nil {
+		panic(err)
+	}
+
 	event, err := checkEventType(ev)
 	if err != nil {
 		level.Error(*log).Log("err", fmt.Errorf("invalid event: %s", ev)) // nolint:errcheck
@@ -277,13 +292,13 @@ func handler(ctx context.Context, ev map[string]interface{}) error {
 
 	switch evt := event.(type) {
 	case *events.CloudWatchEvent:
-		err = processEventBridgeEvent(ctx, evt, pClient, log, processS3Event)
+		err = processEventBridgeEvent(ctx, evt, pClient, lokiStageConfigs, log, processS3Event)
 	case *events.S3Event:
-		err = processS3Event(ctx, evt, pClient, log)
+		err = processS3Event(ctx, evt, pClient, lokiStageConfigs, log)
 	case *events.CloudwatchLogsEvent:
-		err = processCWEvent(ctx, evt, pClient)
+		err = processCWEvent(ctx, evt, pClient, lokiStageConfigs)
 	case *events.KinesisEvent:
-		err = processKinesisEvent(ctx, evt, pClient)
+		err = processKinesisEvent(ctx, evt, pClient, lokiStageConfigs)
 	case *events.SQSEvent:
 		err = processSQSEvent(ctx, evt, handler)
 	case *events.SNSEvent:
