@@ -13,6 +13,7 @@ import (
 
 	"github.com/go-kit/log/level"
 	"github.com/grafana/dskit/backoff"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/model"
 	prommodel "github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/relabel"
@@ -267,6 +268,7 @@ func handler(ctx context.Context, ev map[string]interface{}) error {
 		lvl = "info"
 	}
 	log := NewLogger(lvl)
+	metrics := prometheus.NewRegistry()
 	pClient := NewPromtailClient(&promtailClientConfig{
 		backoff: &backoff.Config{
 			MinBackoff: minBackoff,
@@ -279,7 +281,7 @@ func handler(ctx context.Context, ev map[string]interface{}) error {
 		},
 	}, log)
 
-	lokiStageConfigs, err := ParsePipelineConfigs(os.Getenv("LOKI_STAGE_CONFIGS"), *log, nil)
+	lokiStageConfigs, err := ParsePipelineConfigs(os.Getenv("LOKI_STAGE_CONFIGS"), *log, metrics)
 	if err != nil {
 		panic(err)
 	}
