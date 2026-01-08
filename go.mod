@@ -19,7 +19,7 @@ require (
 	github.com/grafana/regexp v0.0.0-20250905093917-f7b3be9d1853
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.23.0
-	github.com/prometheus/common v0.65.1-0.20250703115700-7f8b2a0d32d3
+	github.com/prometheus/common v0.67.5
 	github.com/prometheus/prometheus v0.305.1-0.20250806170547-208187eaa19b
 	github.com/stretchr/testify v1.11.1
 )
