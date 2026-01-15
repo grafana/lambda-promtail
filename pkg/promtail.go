@@ -62,8 +62,27 @@ func newBatch(ctx context.Context, pClient Client, processingPipeline *LokiStage
 }
 
 func (b *batch) add(ctx context.Context, e entry) error {
-	// Skip entries with no labels (filtered out by relabeling)
-	if e.labels == nil {
+	if b.processor.Size() > 0 {
+		// Apply pipeline stages to entry
+		stageEntry := stages.Entry{
+			Extracted: map[string]interface{}{},
+			Entry:     api.Entry{Labels: e.labels, Entry: e.entry},
+		}
+		for labelName, labelValue := range e.labels {
+			stageEntry.Extracted[string(labelName)] = string(labelValue)
+		}
+		stageEntry = b.processor.Process(stageEntry)
+		e.labels = stageEntry.Labels
+		e.entry = logproto.Entry{
+			Timestamp:          stageEntry.Timestamp,
+			Line:               stageEntry.Line,
+			StructuredMetadata: stageEntry.StructuredMetadata,
+			Parsed:             stageEntry.Parsed,
+		}
+	}
+
+	// Skip entries with no labels or line (filtered out by relabeling or stage processing)
+	if e.labels == nil || e.entry.Line == "" {
 		return nil
 	}
 
@@ -77,33 +96,8 @@ func (b *batch) add(ctx context.Context, e entry) error {
 		stream = b.streams[labels]
 	}
 
-	if b.processor.Size() > 0 {
-		// Apply pipeline stages to entry
-		stageEntry := stages.Entry{
-			Extracted: map[string]interface{}{},
-			Entry:     api.Entry{Labels: e.labels, Entry: e.entry},
-		}
-		for labelName, labelValue := range e.labels {
-			stageEntry.Extracted[string(labelName)] = string(labelValue)
-		}
-		stageEntry = b.processor.Process(stageEntry)
-
-		// Check for dropped entries
-		if stageEntry.Line != "" {
-			pushE := logproto.Entry{
-				Timestamp:          stageEntry.Timestamp,
-				Line:               stageEntry.Line,
-				StructuredMetadata: stageEntry.StructuredMetadata,
-				Parsed:             stageEntry.Parsed,
-			}
-
-			stream.Entries = append(stream.Entries, pushE)
-			b.size += len(pushE.Line)
-		}
-	} else {
-		stream.Entries = append(stream.Entries, e.entry)
-		b.size += len(e.entry.Line)
-	}
+	stream.Entries = append(stream.Entries, e.entry)
+	b.size += len(e.entry.Line)
 
 	if b.size > batchSize {
 		return b.flushBatch(ctx)
