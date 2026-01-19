@@ -13,7 +13,7 @@ RUN ls -al
 RUN go mod download
 RUN go build -o /main -tags lambda.norpc -ldflags="-s -w" pkg/*.go
 # copy artifacts to a clean image
-FROM public.ecr.aws/lambda/provided:al2@sha256:5237e09330b1b06b9f5f7eb2cbd8bd8b091ac4a7e3a9f82d679bd2423e063b35
+FROM public.ecr.aws/lambda/provided:al2@sha256:91999d3f57c058711ba8fd17b0eb25df4309d7df31856d2597e6c065e9d2e87a
 RUN yum -y update glib2 stdlib openssl-libs ca-certificates krb5-libs && \
     yum clean all && \
     rm -rf /var/cache/yum
