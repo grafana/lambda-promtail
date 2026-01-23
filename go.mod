@@ -14,7 +14,7 @@ require (
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang/snappy v1.0.0
 	github.com/grafana/dskit v0.0.0-20250828173137-de14cf923eeb
-	github.com/grafana/loki/pkg/push v0.0.0-20250630054201-94c0ba7b0952
+	github.com/grafana/loki/pkg/push v0.4.0
 	github.com/grafana/loki/v3 v3.6.3
 	github.com/grafana/regexp v0.0.0-20250905093917-f7b3be9d1853
 	github.com/pkg/errors v0.9.1
