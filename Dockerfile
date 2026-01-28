@@ -1,4 +1,4 @@
-FROM golang:1.25-alpine@sha256:aee43c3ccbf24fdffb7295693b6e33b21e01baec1b2a55acc351fde345e9ec34 AS build-image
+FROM golang:1.25-alpine@sha256:660f0b83cf50091e3777e4730ccc0e63e83fea2c420c872af5c60cb357dcafb2 AS build-image
 
 COPY . /src/lambda-promtail
 WORKDIR /src/lambda-promtail
