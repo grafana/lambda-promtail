@@ -152,7 +152,7 @@ func parseExtraLabels(extraLabelsRaw string, omitPrefix bool) (model.LabelSet, e
 	}
 	for i := 0; i < len(extraLabelsSplit); i += 2 {
 		labelName := model.LabelName(prefix + extraLabelsSplit[i])
-		if !labelName.IsValidLegacy() {
+		if !model.LegacyValidation.IsValidLabelName(string(labelName)) {
 			return nil, fmt.Errorf("invalid name %q", labelName)
 		}
 		labelValue := model.LabelValue(extraLabelsSplit[i+1])
@@ -172,7 +172,7 @@ func getDropLabels() ([]model.LabelName, error) {
 		dropLabelsRawSplit := strings.Split(dropLabelsRaw, ",")
 		for _, dropLabelRaw := range dropLabelsRawSplit {
 			dropLabel := model.LabelName(dropLabelRaw)
-			if !dropLabel.IsValidLegacy() {
+			if !model.LegacyValidation.IsValidLabelName(string(dropLabel)) {
 				return []model.LabelName{}, fmt.Errorf("invalid label name %s", dropLabelRaw)
 			}
 			result = append(result, dropLabel)
