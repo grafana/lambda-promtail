@@ -1,4 +1,4 @@
-FROM golang:1.25-alpine@sha256:aee43c3ccbf24fdffb7295693b6e33b21e01baec1b2a55acc351fde345e9ec34 AS build-image
+FROM golang:1.25-alpine@sha256:98e6cffc31ccc44c7c15d83df1d69891efee8115a5bb7ede2bf30a38af3e3c92 AS build-image
 
 COPY . /src/lambda-promtail
 WORKDIR /src/lambda-promtail
@@ -13,7 +13,7 @@ RUN ls -al
 RUN go mod download
 RUN go build -o /main -tags lambda.norpc -ldflags="-s -w" pkg/*.go
 # copy artifacts to a clean image
-FROM public.ecr.aws/lambda/provided:al2@sha256:5237e09330b1b06b9f5f7eb2cbd8bd8b091ac4a7e3a9f82d679bd2423e063b35
+FROM public.ecr.aws/lambda/provided:al2.2025.12.22.12@sha256:5191eb43a2bc33971e3f8bf86eca599b47850d45e891523c909389153419f891
 RUN yum -y update glib2 stdlib openssl-libs ca-certificates krb5-libs && \
     yum clean all && \
     rm -rf /var/cache/yum
