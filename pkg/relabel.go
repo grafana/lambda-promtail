@@ -90,7 +90,7 @@ func (rc *RelabelConfig) ToPrometheusConfig() (*relabel.Config, error) {
 		Action:       action,
 	}
 
-	if err := cfg.Validate(); err != nil {
+	if err := cfg.Validate(model.UTF8Validation); err != nil {
 		return nil, fmt.Errorf("invalid relabel config: %w", err)
 	}
 	return cfg, nil
