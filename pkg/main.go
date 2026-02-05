@@ -13,6 +13,7 @@ import (
 
 	"github.com/go-kit/log/level"
 	"github.com/grafana/dskit/backoff"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/model"
 	prommodel "github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/relabel"
@@ -152,7 +153,7 @@ func parseExtraLabels(extraLabelsRaw string, omitPrefix bool) (model.LabelSet, e
 	}
 	for i := 0; i < len(extraLabelsSplit); i += 2 {
 		labelName := model.LabelName(prefix + extraLabelsSplit[i])
-		if !labelName.IsValidLegacy() {
+		if !model.LegacyValidation.IsValidLabelName(string(labelName)) {
 			return nil, fmt.Errorf("invalid name %q", labelName)
 		}
 		labelValue := model.LabelValue(extraLabelsSplit[i+1])
@@ -172,7 +173,7 @@ func getDropLabels() ([]model.LabelName, error) {
 		dropLabelsRawSplit := strings.Split(dropLabelsRaw, ",")
 		for _, dropLabelRaw := range dropLabelsRawSplit {
 			dropLabel := model.LabelName(dropLabelRaw)
-			if !dropLabel.IsValidLegacy() {
+			if !model.LegacyValidation.IsValidLabelName(string(dropLabel)) {
 				return []model.LabelName{}, fmt.Errorf("invalid label name %s", dropLabelRaw)
 			}
 			result = append(result, dropLabel)
@@ -267,6 +268,7 @@ func handler(ctx context.Context, ev map[string]interface{}) error {
 		lvl = "info"
 	}
 	log := NewLogger(lvl)
+	metrics := prometheus.NewRegistry()
 	pClient := NewPromtailClient(&promtailClientConfig{
 		backoff: &backoff.Config{
 			MinBackoff: minBackoff,
@@ -279,7 +281,7 @@ func handler(ctx context.Context, ev map[string]interface{}) error {
 		},
 	}, log)
 
-	lokiStageConfigs, err := ParsePipelineConfigs(os.Getenv("LOKI_STAGE_CONFIGS"), *log, nil)
+	lokiStageConfigs, err := ParsePipelineConfigs(os.Getenv("LOKI_STAGE_CONFIGS"), *log, metrics)
 	if err != nil {
 		panic(err)
 	}
