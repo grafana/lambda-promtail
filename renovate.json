@@ -11,6 +11,11 @@
       ],
       "matchCurrentVersion": "!/^0/",
       "automerge": true
+    },
+    {
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["public.ecr.aws/lambda/provided"],
+      "versioning": "loose"
     }
   ]
 }
