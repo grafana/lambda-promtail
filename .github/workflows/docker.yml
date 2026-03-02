@@ -1,0 +1,31 @@
+name: Docker
+
+on: [push, pull_request]
+
+jobs:
+  build-and-scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        with:
+          persist-credentials: false
+
+      - name: Build Docker image
+        run: docker build -t lambda-promtail:${{ github.sha }} .
+
+      - name: Scan with Trivy
+        uses: aquasecurity/trivy-action@97e0b3872f55f89b95b2f65b3dbab56962816478 # 0.35.0
+        with:
+          image-ref: lambda-promtail:${{ github.sha }}
+          format: sarif
+          output: trivy-results.sarif
+
+      - name: Upload Trivy SARIF
+        uses: github/codeql-action/upload-sarif@45580472a5bb82c4681c4ac726cfdb60060c2ee1 # v3.32.4
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy
