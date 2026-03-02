@@ -18,7 +18,7 @@ jobs:
         run: docker build -t lambda-promtail:${{ github.sha }} .
 
       - name: Scan with Trivy
-        uses: aquasecurity/trivy-action@e368e328979b113139d6f9068e03accaed98a518 # 0.34.1
+        uses: aquasecurity/trivy-action@97e0b3872f55f89b95b2f65b3dbab56962816478 # 0.35.0
         with:
           image-ref: lambda-promtail:${{ github.sha }}
           format: sarif
