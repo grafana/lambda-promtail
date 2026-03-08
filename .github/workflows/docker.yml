@@ -25,7 +25,7 @@ jobs:
           output: trivy-results.sarif
 
       - name: Upload Trivy SARIF
-        uses: github/codeql-action/upload-sarif@45580472a5bb82c4681c4ac726cfdb60060c2ee1 # v3.32.4
+        uses: github/codeql-action/upload-sarif@0d579ffd059c29b07949a3cce3983f0780820c98 # v4.32.6
         with:
           sarif_file: trivy-results.sarif
           category: trivy
