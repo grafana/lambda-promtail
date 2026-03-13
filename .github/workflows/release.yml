@@ -11,6 +11,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
+      contents: write
       id-token: write
 
     steps:
@@ -67,3 +68,10 @@ jobs:
           aws s3 cp lambda-promtail.yaml s3://grafanalabs-cf-templates/cloudwatch-logs/ --acl public-read
           aws s3 cp aws-alb-logs.yaml s3://grafanalabs-cf-templates/logs-with-lambda/ --acl public-read
           aws s3 cp aws-eventbridge-logs.yaml s3://grafanalabs-cf-templates/logs-with-lambda/ --acl public-read
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@7b4da11513bf3f43f9999e90eabced41ab8bb048 # v2.2.3
+        with:
+          files: lambda-promtail-${{ env.VERSION }}.zip
+          generate_release_notes: true
