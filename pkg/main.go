@@ -43,28 +43,10 @@ var (
 	relabelConfigs                                                           []*relabel.Config
 )
 
-func setupArguments(ctx context.Context, secretFetcher secretFetcher) {
+func setupArguments(ctx context.Context, provider Provider) {
 	addr := os.Getenv("WRITE_ADDRESS")
 	if addr == "" {
 		panic(errors.New("required environmental variable WRITE_ADDRESS not present, format: https://<hostname>/loki/api/v1/push"))
-	}
-
-	vaultRole, ok := os.LookupEnv("VAULT_ROLE")
-	if ok {
-		fmt.Println("using Vault configuration with role: ", vaultRole)
-		vaultMount, ok := os.LookupEnv("VAULT_MOUNT")
-		if !ok {
-			panic(errors.New("VAULT_ROLE provided, but required environment variable VAULT_MOUNT not provided"))
-		}
-		vaultPath, ok := os.LookupEnv("VAULT_PATH")
-		if !ok {
-			panic(errors.New("VAULT_ROLE provided, but required environment variable VAULT_PATH not provided"))
-		}
-		secretFetcher.SetVaultConfig(&VaultKVCredentials{
-			role:  vaultRole,
-			mount: vaultMount,
-			path:  vaultPath,
-		})
 	}
 
 	var err error
@@ -87,11 +69,11 @@ func setupArguments(ctx context.Context, secretFetcher secretFetcher) {
 		panic(err)
 	}
 
-	username, err = loadSensitiveEnv(ctx, secretFetcher, "USERNAME")
+	username, err = loadSensitiveEnv(ctx, provider, "USERNAME")
 	if err != nil {
 		panic(err)
 	}
-	password, err = loadSensitiveEnv(ctx, secretFetcher, "PASSWORD")
+	password, err = loadSensitiveEnv(ctx, provider, "PASSWORD")
 	if err != nil {
 		panic(err)
 	}
@@ -100,7 +82,7 @@ func setupArguments(ctx context.Context, secretFetcher secretFetcher) {
 		panic("both username and password must be set if either one is set")
 	}
 
-	bearerToken, err = loadSensitiveEnv(ctx, secretFetcher, "BEARER_TOKEN")
+	bearerToken, err = loadSensitiveEnv(ctx, provider, "BEARER_TOKEN")
 	if err != nil {
 		panic(err)
 	}
@@ -321,6 +303,31 @@ func handler(ctx context.Context, ev map[string]interface{}) error {
 }
 
 func main() {
-	setupArguments(context.Background(), &secretClients{})
+	ctx := context.Background()
+
+	providers := []Provider{
+		&AWSSecretsManagerProvider{},
+		&AWSSSMProvider{},
+	}
+
+	if vaultRole, ok := os.LookupEnv("VAULT_ROLE"); ok {
+		fmt.Println("using Vault configuration with role: ", vaultRole)
+		vaultMount, ok := os.LookupEnv("VAULT_MOUNT")
+		if !ok {
+			panic(errors.New("VAULT_ROLE provided, but required environment variable VAULT_MOUNT not provided"))
+		}
+		vaultPath, ok := os.LookupEnv("VAULT_PATH")
+		if !ok {
+			panic(errors.New("VAULT_ROLE provided, but required environment variable VAULT_PATH not provided"))
+		}
+		// Vault takes precedence — prepend to the chain.
+		providers = append([]Provider{NewVaultProvider(&VaultKVCredentials{
+			role:  vaultRole,
+			mount: vaultMount,
+			path:  vaultPath,
+		})}, providers...)
+	}
+
+	setupArguments(ctx, NewChainProvider(providers...))
 	lambda.Start(handler)
 }

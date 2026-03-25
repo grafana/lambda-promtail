@@ -2,45 +2,23 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"os"
-
-	"github.com/aws/aws-sdk-go-v2/aws/arn"
 )
 
-type secretFetcher interface {
-	FetchFromAWSSecretsManager(ctx context.Context, secretArn string) (string, error)
-	FetchFromAWSSSMParameterStore(ctx context.Context, parameterArn string) (string, error)
-	FetchFromVault(ctx context.Context, key string) (string, error)
-	HasVaultConfig() bool
-	SetVaultConfig(config *VaultKVCredentials)
+// ErrNotApplicable is returned by a Provider when it cannot handle the given key.
+var ErrNotApplicable = errors.New("provider not applicable for this key")
+
+// Provider retrieves a secret value for the given key or reference.
+// It returns ErrNotApplicable if it cannot handle the key.
+type Provider interface {
+	Retrieve(ctx context.Context, key string) (string, error)
 }
 
-func loadSensitiveEnv(ctx context.Context, secrets secretFetcher, name string) (string, error) {
+func loadSensitiveEnv(ctx context.Context, provider Provider, name string) (string, error) {
 	envValue, ok := os.LookupEnv(name)
 	if !ok {
 		return "", nil
 	}
-
-	if secrets.HasVaultConfig() {
-		return secrets.FetchFromVault(ctx, envValue)
-	}
-
-	if arn.IsARN(envValue) {
-		parsedArn, err := arn.Parse(envValue)
-		if err != nil {
-			return "", fmt.Errorf("error parsing arn: %w", err)
-		}
-
-		switch parsedArn.Service {
-		case "secretsmanager":
-			return secrets.FetchFromAWSSecretsManager(ctx, envValue)
-		case "ssm":
-			return secrets.FetchFromAWSSSMParameterStore(ctx, envValue)
-		default:
-			return "", fmt.Errorf("environment variable %s set to invalid ARN (unsupported service %s)", name, parsedArn.Service)
-		}
-	}
-
-	return envValue, nil
+	return provider.Retrieve(ctx, envValue)
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/aws/aws-sdk-go-v2/aws/arn"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
@@ -13,68 +14,67 @@ import (
 	auth "github.com/hashicorp/vault/api/auth/aws"
 )
 
+const (
+	awsServiceSecretsManager = "secretsmanager"
+	awsServiceSSM            = "ssm"
+)
+
+// ChainProvider tries each Provider in order, skipping those that return ErrNotApplicable.
+// If no provider handles the key and it is an ARN, an error is returned.
+// Otherwise the key is returned as a plain value.
+type ChainProvider struct {
+	providers []Provider
+}
+
+var _ Provider = &ChainProvider{}
+
+func NewChainProvider(providers ...Provider) *ChainProvider {
+	return &ChainProvider{providers: providers}
+}
+
+func (c *ChainProvider) Retrieve(ctx context.Context, key string) (string, error) {
+	for _, p := range c.providers {
+		val, err := p.Retrieve(ctx, key)
+		if errors.Is(err, ErrNotApplicable) {
+			continue
+		}
+		return val, err
+	}
+	if parsedArn, err := arn.Parse(key); err == nil {
+		return "", fmt.Errorf("unsupported ARN service: %s", parsedArn.Service)
+	}
+	return key, nil
+}
+
 type VaultKVCredentials struct {
 	role  string
 	mount string
 	path  string
 }
 
-var _ secretFetcher = &secretClients{}
-
-type secretClients struct {
-	vaultConfig *VaultKVCredentials
-	vaultData   map[string]any
+// VaultProvider retrieves secrets from a Vault KVv2 engine using AWS auth.
+// It is always applicable when present in a chain.
+type VaultProvider struct {
+	config    *VaultKVCredentials
+	vaultData map[string]any
 }
 
-func (c *secretClients) FetchFromAWSSecretsManager(ctx context.Context, secretArn string) (string, error) {
-	cfg, err := config.LoadDefaultConfig(ctx)
-	if err != nil {
-		return "", fmt.Errorf("error loading aws config: %w", err)
-	}
+var _ Provider = &VaultProvider{}
 
-	client := secretsmanager.NewFromConfig(cfg)
-	out, err := client.GetSecretValue(ctx, &secretsmanager.GetSecretValueInput{
-		SecretId: &secretArn,
-	})
-	if err != nil {
-		return "", fmt.Errorf("error fetching secret %s: %w", secretArn, err)
-	}
-
-	return *out.SecretString, nil
+func NewVaultProvider(config *VaultKVCredentials) *VaultProvider {
+	return &VaultProvider{config: config}
 }
 
-func (c *secretClients) FetchFromAWSSSMParameterStore(ctx context.Context, parameterArn string) (string, error) {
-	cfg, err := config.LoadDefaultConfig(ctx)
-	if err != nil {
-		return "", fmt.Errorf("error loading aws config: %w", err)
-	}
-
-	client := ssm.NewFromConfig(cfg)
-	out, err := client.GetParameter(ctx, &ssm.GetParameterInput{
-		Name:           &parameterArn,
-		WithDecryption: ptr.Bool(true),
-	})
-	if err != nil {
-		return "", fmt.Errorf("error fetching SSM parameter %s: %w", parameterArn, err)
-	}
-
-	return *out.Parameter.Value, nil
-}
-
-func (c *secretClients) FetchFromVault(ctx context.Context, key string) (string, error) {
-	if c.vaultData == nil {
-		if c.vaultConfig == nil {
-			return "", errors.New("vault configuration required")
-		}
-		config := vault.DefaultConfig()
-
-		client, err := vault.NewClient(config)
+func (p *VaultProvider) Retrieve(ctx context.Context, key string) (string, error) {
+	if p.vaultData == nil {
+		vaultConfig := vault.DefaultConfig()
+		client, err := vault.NewClient(vaultConfig)
 		if err != nil {
 			return "", fmt.Errorf("unable to initialize Vault client: %w", err)
 		}
 
 		awsAuth, err := auth.NewAWSAuth(
-			auth.WithRole(c.vaultConfig.role), // if not provided, Vault will fall back on looking for a role with the IAM role name if you're using the iam auth type, or the EC2 instance's AMI id if using the ec2 auth type
+			auth.WithRole(p.config.role),
 		)
 		if err != nil {
 			return "", fmt.Errorf("unable to initialize AWS auth method: %w", err)
@@ -88,25 +88,74 @@ func (c *secretClients) FetchFromVault(ctx context.Context, key string) (string,
 			return "", fmt.Errorf("no auth info was returned after login")
 		}
 
-		data, err := client.KVv2(c.vaultConfig.mount).Get(ctx, c.vaultConfig.path)
+		data, err := client.KVv2(p.config.mount).Get(ctx, p.config.path)
 		if err != nil {
 			return "", fmt.Errorf("unable to read secret: %w", err)
 		}
-		c.vaultData = data.Data
+		p.vaultData = data.Data
 	}
 
-	value, ok := c.vaultData[key].(string)
+	value, ok := p.vaultData[key].(string)
 	if !ok {
-		return "", fmt.Errorf("value type assertion failed: %T %#v", c.vaultData[key], c.vaultData[key])
+		return "", fmt.Errorf("value type assertion failed: %T %#v", p.vaultData[key], p.vaultData[key])
 	}
 
 	return value, nil
 }
 
-func (c *secretClients) HasVaultConfig() bool {
-	return c.vaultConfig != nil
+// AWSSecretsManagerProvider retrieves secrets from AWS Secrets Manager.
+// Returns ErrNotApplicable for keys that are not Secrets Manager ARNs.
+type AWSSecretsManagerProvider struct{}
+
+var _ Provider = &AWSSecretsManagerProvider{}
+
+func (p *AWSSecretsManagerProvider) Retrieve(ctx context.Context, key string) (string, error) {
+	parsedArn, err := arn.Parse(key)
+	if err != nil || parsedArn.Service != awsServiceSecretsManager {
+		return "", ErrNotApplicable
+	}
+
+	cfg, err := config.LoadDefaultConfig(ctx)
+	if err != nil {
+		return "", fmt.Errorf("error loading AWS config: %w", err)
+	}
+
+	client := secretsmanager.NewFromConfig(cfg)
+	out, err := client.GetSecretValue(ctx, &secretsmanager.GetSecretValueInput{
+		SecretId: &key,
+	})
+	if err != nil {
+		return "", fmt.Errorf("error fetching secret %s: %w", key, err)
+	}
+
+	return *out.SecretString, nil
 }
 
-func (c *secretClients) SetVaultConfig(config *VaultKVCredentials) {
-	c.vaultConfig = config
+// AWSSSMProvider retrieves parameters from AWS SSM Parameter Store.
+// Returns ErrNotApplicable for keys that are not SSM ARNs.
+type AWSSSMProvider struct{}
+
+var _ Provider = &AWSSSMProvider{}
+
+func (p *AWSSSMProvider) Retrieve(ctx context.Context, key string) (string, error) {
+	parsedArn, err := arn.Parse(key)
+	if err != nil || parsedArn.Service != awsServiceSSM {
+		return "", ErrNotApplicable
+	}
+
+	cfg, err := config.LoadDefaultConfig(ctx)
+	if err != nil {
+		return "", fmt.Errorf("error loading AWS config: %w", err)
+	}
+
+	client := ssm.NewFromConfig(cfg)
+	out, err := client.GetParameter(ctx, &ssm.GetParameterInput{
+		Name:           &key,
+		WithDecryption: ptr.Bool(true),
+	})
+	if err != nil {
+		return "", fmt.Errorf("error fetching SSM parameter %s: %w", key, err)
+	}
+
+	return *out.Parameter.Value, nil
 }
