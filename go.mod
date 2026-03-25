@@ -242,3 +242,7 @@ require (
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397 // indirect
 )
+
+// Match dskit's replace: use grafana's memberlist fork which includes fixes
+// not yet upstream (NodeState, NodeSelection, PushPullNodes).
+replace github.com/hashicorp/memberlist => github.com/grafana/memberlist v0.3.1-0.20251126142931-6f9f62ab6f86
