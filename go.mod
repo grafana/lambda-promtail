@@ -15,7 +15,7 @@ require (
 	github.com/golang/snappy v1.0.0
 	github.com/grafana/dskit v0.0.0-20260324093927-3167f499dfc0
 	github.com/grafana/loki/pkg/push v0.0.0-20260106103740-2203c1d8e8fa
-	github.com/grafana/loki/v3 v3.6.7
+	github.com/grafana/loki/v3 v3.6.8
 	github.com/grafana/regexp v0.0.0-20250905093917-f7b3be9d1853
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.23.2
