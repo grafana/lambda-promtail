@@ -60,6 +60,40 @@ func Test_getLabels(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "s3_alb_health_check",
+			args: args{
+				record: events.S3EventRecord{
+					AWSRegion: "us-east-2",
+					S3: events.S3Entity{
+						Bucket: events.S3Bucket{
+							Name: "elb_logs_test",
+							OwnerIdentity: events.S3UserIdentity{
+								PrincipalID: "test",
+							},
+						},
+						Object: events.S3Object{
+							Key: "my-bucket/AWSLogs/123456789012/elasticloadbalancing/us-east-2/2022/05/01/health_check_log_123456789012_elasticloadbalancing_us-east-2_app.my-loadbalancer.1234567890abcdef_20220215T2340Z_172.160.001.192_20sg8hgm.log.gz",
+						},
+					},
+				},
+			},
+			want: map[string]string{
+				"account_id":    "123456789012",
+				"bucket":        "elb_logs_test",
+				"bucket_owner":  "test",
+				"bucket_region": "us-east-2",
+				"day":           "01",
+				"key":           "my-bucket/AWSLogs/123456789012/elasticloadbalancing/us-east-2/2022/05/01/health_check_log_123456789012_elasticloadbalancing_us-east-2_app.my-loadbalancer.1234567890abcdef_20220215T2340Z_172.160.001.192_20sg8hgm.log.gz",
+				"month":         "05",
+				"region":        "us-east-2",
+				"lb_type":       LbAlbType,
+				"src":           "my-loadbalancer",
+				"type":          LbLogType,
+				"year":          "2022",
+			},
+			wantErr: false,
+		},
+		{
 			name: "s3_nlb",
 			args: args{
 				record: events.S3EventRecord{
