@@ -590,6 +590,38 @@ func Test_getLabels(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: "cognito_service_logs",
+			args: args{
+				record: events.S3EventRecord{
+					AWSRegion: "eu-central-1",
+					S3: events.S3Entity{
+						Bucket: events.S3Bucket{
+							Name: "my-bucket",
+							OwnerIdentity: events.S3UserIdentity{
+								PrincipalID: "test",
+							},
+						},
+						Object: events.S3Object{
+							Key: "my-bucket/AWSLogs/123456789012/AWSCognitoServiceLogs/eu-central-1/eu-central-1-manual-testing/USER_AUTH_EVENTS/123456789012_aws_cognito_service_logs_eu-central-1_eu-central-1-manual-testing_userAuthEvents_INFO_S3_07fc3956-72c4-4de4-b7b2-70a6dbe22034_cognito-eu-central-1-manual-testing_USER_AUTH_EVENTS_20251216_8c1fea12.log.gz",
+						},
+					},
+				},
+			},
+			want: map[string]string{
+				"account_id":      "123456789012",
+				"bucket":          "my-bucket",
+				"bucket_owner":    "test",
+				"bucket_region":   "eu-central-1",
+				"cognito_pool_id": "eu-central-1-manual-testing",
+				"event_type_id":   "USER_AUTH_EVENTS",
+				"key":             "my-bucket/AWSLogs/123456789012/AWSCognitoServiceLogs/eu-central-1/eu-central-1-manual-testing/USER_AUTH_EVENTS/123456789012_aws_cognito_service_logs_eu-central-1_eu-central-1-manual-testing_userAuthEvents_INFO_S3_07fc3956-72c4-4de4-b7b2-70a6dbe22034_cognito-eu-central-1-manual-testing_USER_AUTH_EVENTS_20251216_8c1fea12.log.gz",
+				"region":          "eu-central-1",
+				"src":             "123456789012_aws_cognito_service_logs_eu-central-1_eu-central-1-manual-testing_userAuthEvents_INFO_S3_07fc3956-72c4-4de4-b7b2-70a6dbe22034_cognito-eu-central-1-manual-testing_USER_AUTH_EVENTS_20251216_8c1fea12.log.gz",
+				"type":            CognitoServiceLogsType,
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -865,6 +897,29 @@ func Test_parseS3Log(t *testing.T) {
 			expectedStream: `{__aws_log_type="s3_waf", __aws_s3_waf="TEST-WEBACL", __aws_s3_waf_owner="11111111111"}`,
 			expectedLog:    `level=warn msg="timestamp type of no_type parser unknown, using current time"` + "\n",
 			wantErr:        false,
+		},
+		{
+			name: "cognitoservicelogs",
+			args: args{
+				batchSize: 131072, // Set large enough we don't try and send to promtail
+				filename:  "../testdata/cognito-log-file.json.gz",
+				b: &batch{
+					streams:   map[string]*logproto.Stream{},
+					processor: process,
+				},
+				labels: map[string]string{
+					"type":       CognitoServiceLogsType,
+					"src":        "source",
+					"account_id": "123456789",
+				},
+			},
+			expectedLen:    1,
+			expectedStream: `{__aws_log_type="s3_cognito_service_logs", __aws_s3_cognito_service_logs="source", __aws_s3_cognito_service_logs_owner="123456789"}`,
+			expectedTimestamps: []time.Time{
+				time.Date(2025, time.December, 16, 8, 47, 05, 0, time.UTC),
+				time.Date(2025, time.December, 16, 8, 47, 10, 0, time.UTC),
+			},
+			wantErr: false,
 		},
 	}
 	parsers["no_type"] = parserConfig{
