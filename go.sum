@@ -276,8 +276,8 @@ github.com/grafana/loki/pkg/push v0.0.0-20260106103740-2203c1d8e8fa h1:AZOG7GSmX
 github.com/grafana/loki/pkg/push v0.0.0-20260106103740-2203c1d8e8fa/go.mod h1:QI4O+SBP6/7F3KW9fIb8c6Gzs10XlUzy8QMzTHGfKLI=
 github.com/grafana/loki/v3 v3.6.8 h1:/jPifDHi/BGDvRE5EIAoTSKcwES3q7+MJw/LRbuAaWk=
 github.com/grafana/loki/v3 v3.6.8/go.mod h1:4rOcS+lxGB7Zg6Rj/EB1pLjGljmoUsoKoEyuXb9oi4I=
-github.com/grafana/memberlist v0.3.1-0.20251126142931-6f9f62ab6f86 h1:aTwfQuroOmOr//QEn9J1MtC4R4CPR9/IbUd8hZrbWKo=
-github.com/grafana/memberlist v0.3.1-0.20251126142931-6f9f62ab6f86/go.mod h1:h60o12SZn/ua/j0B6iKAZezA4eDaGsIuPO70eOaJ6WE=
+github.com/grafana/memberlist v0.3.1-0.20260410132335-4887d8e8d493 h1:Ao0Mbj5/phJx/Qc3Buil7uleoKsiKyuVPNDOPfgytuY=
+github.com/grafana/memberlist v0.3.1-0.20260410132335-4887d8e8d493/go.mod h1:h60o12SZn/ua/j0B6iKAZezA4eDaGsIuPO70eOaJ6WE=
 github.com/grafana/otel-profiling-go v0.5.1 h1:stVPKAFZSa7eGiqbYuG25VcqYksR6iWvF3YH66t4qL8=
 github.com/grafana/otel-profiling-go v0.5.1/go.mod h1:ftN/t5A/4gQI19/8MoWurBEtC6gFw8Dns1sJZ9W4Tls=
 github.com/grafana/pyroscope-go/godeltaprof v0.1.9 h1:c1Us8i6eSmkW+Ez05d3co8kasnuOY813tbMN8i/a3Og=
