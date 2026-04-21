@@ -14,7 +14,7 @@ jobs:
           persist-credentials: false
 
       - name: templates 
-        uses: scottbrenner/cfn-lint-action@9636da81fb2e0cef75725d8dda11b0148940b7ae # v2.6.0
+        uses: scottbrenner/cfn-lint-action@c5f18dc4be13042d564f3052f4067dc9ceafe355 # v2.7.0
         with:
           version: "[sarif]>=1.0"
           command: cfn-lint --non-zero-exit-code error -t ./*.yaml
