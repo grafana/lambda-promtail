@@ -244,4 +244,4 @@ require (
 
 // Match dskit's replace: use grafana's memberlist fork which includes fixes
 // not yet upstream (NodeState, NodeSelection, PushPullNodes).
-replace github.com/hashicorp/memberlist => github.com/grafana/memberlist v0.3.1-0.20251126142931-6f9f62ab6f86
+replace github.com/hashicorp/memberlist => github.com/grafana/memberlist v0.3.1-0.20260410132335-4887d8e8d493
