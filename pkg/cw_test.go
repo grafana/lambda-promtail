@@ -25,7 +25,7 @@ func Test_parseCWEvent(t *testing.T) {
 				streams:   map[string]*logproto.Stream{},
 				processor: process,
 			},
-			expectedStream: `{__aws_cloudwatch_log_group="testLogGroup", __aws_cloudwatch_owner="123456789123", __aws_log_type="cloudwatch"}`,
+			expectedStream: `{app="cloudwatch", cloudwatch_log_group="testLogGroup"}`,
 			keepStream:     false,
 		},
 		{
@@ -34,7 +34,7 @@ func Test_parseCWEvent(t *testing.T) {
 				streams:   map[string]*logproto.Stream{},
 				processor: process,
 			},
-			expectedStream: `{__aws_cloudwatch_log_group="testLogGroup", __aws_cloudwatch_log_stream="testLogStream", __aws_cloudwatch_owner="123456789123", __aws_log_type="cloudwatch"}`,
+			expectedStream: `{__aws_cloudwatch_log_stream="testLogStream", app="cloudwatch", cloudwatch_log_group="testLogGroup"}`,
 			keepStream:     true,
 		},
 	}
