@@ -194,7 +194,8 @@ func applyRelabelConfigs(labels model.LabelSet) model.LabelSet {
 		builder.Add(string(name), string(value))
 	}
 
-	// Sort labels as required by Process
+	// Sort labels as required by Process (binary search)
+	builder.Sort()
 	promLabels := builder.Labels()
 
 	// Apply relabeling
@@ -219,10 +220,6 @@ func applyLabels(labels model.LabelSet) model.LabelSet {
 		delete(finalLabels, dropLabel)
 	}
 
-	// Apply relabeling after merging extra labels and dropping labels
-	finalLabels = applyRelabelConfigs(finalLabels)
-
-	// Skip entries with no labels after relabeling
 	if len(finalLabels) == 0 {
 		return nil
 	}

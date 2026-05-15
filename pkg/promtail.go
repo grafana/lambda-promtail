@@ -29,6 +29,7 @@ const (
 	maxRetries = 10
 
 	reservedLabelTenantID = "__tenant_id__"
+	reservedLabelLogLine  = "__log_line__"
 
 	userAgent = "lambda-promtail"
 )
@@ -62,6 +63,26 @@ func newBatch(ctx context.Context, pClient Client, processingPipeline *LokiStage
 }
 
 func (b *batch) add(ctx context.Context, e entry) error {
+	// Apply relabel configs with log line available for content-based filtering.
+	// The log line is injected as a temporary __log_line__ label so relabel rules
+	// can match against it (e.g. to drop entries via "source_labels": ["__log_line__"]).
+	// This runs before pipeline stages to preserve the original processing order.
+	if len(relabelConfigs) > 0 && e.labels != nil {
+		labelsWithLine := make(model.LabelSet, len(e.labels)+1)
+		for k, v := range e.labels {
+			labelsWithLine[k] = v
+		}
+		labelsWithLine[model.LabelName(reservedLabelLogLine)] = model.LabelValue(e.entry.Line)
+
+		relabeled := applyRelabelConfigs(labelsWithLine)
+		delete(relabeled, model.LabelName(reservedLabelLogLine))
+
+		if len(relabeled) == 0 {
+			return nil
+		}
+		e.labels = relabeled
+	}
+
 	if b.processor.Size() > 0 {
 		// Apply pipeline stages to entry
 		stageEntry := stages.Entry{
