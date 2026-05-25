@@ -4,19 +4,22 @@ on:
   push:
     branches:
       - main
+    tags:
+      - 'v*'
 
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
+      contents: write
       id-token: write
 
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       - name: Setup Go
-        uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6
+        uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6
         with:
-          go-version: '1.24.x'
+          go-version-file: go.mod
           cache: false
 
       - name: Set version
@@ -65,3 +68,10 @@ jobs:
           aws s3 cp lambda-promtail.yaml s3://grafanalabs-cf-templates/cloudwatch-logs/ --acl public-read
           aws s3 cp aws-alb-logs.yaml s3://grafanalabs-cf-templates/logs-with-lambda/ --acl public-read
           aws s3 cp aws-eventbridge-logs.yaml s3://grafanalabs-cf-templates/logs-with-lambda/ --acl public-read
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
+        with:
+          files: lambda-promtail-${{ env.VERSION }}.zip
+          generate_release_notes: true

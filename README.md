@@ -24,9 +24,19 @@ If you want to modify the lambda-promtail code you will also need:
 
 ### Building and Packaging
 
-The provided Makefile has targets `build`, and `clean`.
+The provided Makefile has targets `build`, `clean`, and `release`.
 
 `build` builds the lambda-promtail as a Go static binary. To build the container image properly you should run `docker build . -f tools/lambda-promtail/Dockerfile` from the root of the Loki repository, you can upload this image to your AWS ECR and use via Lambda or if you don't pass a `lambda_promtail_image` value, the terraform will build it from the Loki repository, zip it and use it via Lambda. `clean` will remove the built Go binary.
+
+`release` creates a semver git tag, auto-incrementing from the latest tag. By default it bumps the patch version. Control the bump level with `BUMP=major|minor|patch`:
+
+```bash
+make release              # v1.0.0 -> v1.0.1
+make release BUMP=minor   # v1.0.1 -> v1.1.0
+make release BUMP=major   # v1.1.0 -> v2.0.0
+```
+
+After tagging, push with `git push origin <tag>`.
 
 ### Packaging and deployment
 
