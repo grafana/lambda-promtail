@@ -150,6 +150,12 @@ variable "omit_extra_labels_prefix" {
   default     = false
 }
 
+variable "loki_stage_configs" {
+  type        = string
+  description = "JSON array of Loki pipeline stage configs. Use to filter or transform log lines before ingestion. Example: '[{\"drop\":{\"expression\":\"\\\" 200 \\\"\"}}]'"
+  default     = ""
+}
+
 variable "batch_size" {
   type        = string
   description = "Determines when to flush the batch of logs (bytes)."

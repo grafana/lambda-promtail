@@ -1,0 +1,18 @@
+name: Release please
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    uses: ferryhopper/auto-github/.github/workflows/do-release-please.yml@rp-v3
+    with:
+      notify_admins_on_failure_channel_id: ${{ vars.SLACK_DEVOPS_CHANNEL_ID }}
+    secrets: inherit

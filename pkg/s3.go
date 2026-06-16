@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -172,6 +173,108 @@ var (
 	}
 )
 
+var (
+	albTargetGroupRegex = regexp.MustCompile(`targetgroup/(?:[^/]+-)?([a-z0-9]+)-([a-z0-9]+)/`)
+	albHostnameRegex    = regexp.MustCompile(`^([a-z0-9-]+)\.([a-z0-9]+)\.ferryhopper\.com`)
+)
+
+// parseALBDynamicLabels extracts service and env labels from an ALB log line.
+// It first tries the target group ARN (field 18 in naive whitespace split, since the
+// quoted request field spans 3 tokens), falling back to the domain_name (field 20).
+func parseALBDynamicLabels(logLine string) model.LabelSet {
+	fields := strings.Fields(logLine)
+	labels := model.LabelSet{}
+
+	// target_group_arn is at index 18 (naive split): fields 12-14 are the quoted request
+	if len(fields) > 18 {
+		if m := albTargetGroupRegex.FindStringSubmatch(fields[18]); len(m) == 3 {
+			labels["service"] = model.LabelValue(m[1])
+			labels["env"] = model.LabelValue(m[2])
+			return labels
+		}
+	}
+
+	// domain_name is at index 20 (naive split)
+	if len(fields) > 20 {
+		host := strings.Trim(fields[20], "\"")
+		if m := albHostnameRegex.FindStringSubmatch(host); len(m) == 3 {
+			labels["service"] = model.LabelValue(m[1])
+			labels["env"] = model.LabelValue(m[2])
+		}
+	}
+
+	return labels
+}
+
+type albLogEntry struct {
+	Timestamp   string `json:"timestamp"`
+	ALBName     string `json:"alb_name"`
+	RemAddr     string `json:"apache_rem_addr"`
+	ReqMethod   string `json:"apache_req_method"`
+	ReqURI      string `json:"apache_req_uri"`
+	Status      string `json:"apache_status"`
+	RespBlen    string `json:"apache_resp_blen"`
+	UserAgent   string `json:"apache_user_agent"`
+	TargetGroup string `json:"alb_target_group"`
+	Host        string `json:"apachex_host"`
+	UpstreamRT  string `json:"apachex_URT"`
+	SSLProtocol string `json:"alb_ssl_protocol"`
+}
+
+// albLogLineToJSON converts a raw ALB log line to a JSON string using jsonext_ups-compatible field names.
+// ALB log format: the quoted "request" field (index 12) spans 3 tokens when split by whitespace,
+// so fields after index 11 are shifted by +2 compared to the AWS documentation field numbers.
+// Falls back to the raw line if parsing fails or the line has too few fields.
+func albLogLineToJSON(logLine string) (string, error) {
+	fields := strings.Fields(logLine)
+	// Minimum: up to ssl_protocol (index 17) to be useful
+	if len(fields) < 18 {
+		return logLine, nil
+	}
+
+	// fields[12] = `"METHOD`, fields[13] = URI, fields[14] = `HTTP/x"` (quoted request spans 3 tokens)
+	reqMethod := strings.TrimPrefix(fields[12], "\"")
+	reqURI := fields[13]
+
+	userAgent := ""
+	if len(fields) > 15 {
+		userAgent = strings.Trim(fields[15], "\"")
+	}
+	sslProtocol := ""
+	if len(fields) > 17 {
+		sslProtocol = fields[17]
+	}
+	targetGroup := ""
+	if len(fields) > 18 {
+		targetGroup = fields[18]
+	}
+	host := ""
+	if len(fields) > 20 {
+		host = strings.Trim(fields[20], "\"")
+	}
+
+	entry := albLogEntry{
+		Timestamp:   fields[1],
+		ALBName:     fields[2],
+		RemAddr:     strings.SplitN(fields[3], ":", 2)[0],
+		ReqMethod:   reqMethod,
+		ReqURI:      reqURI,
+		Status:      fields[8],
+		RespBlen:    fields[11],
+		UserAgent:   userAgent,
+		TargetGroup: targetGroup,
+		Host:        host,
+		UpstreamRT:  fields[6],
+		SSLProtocol: sslProtocol,
+	}
+
+	b, err := json.Marshal(entry)
+	if err != nil {
+		return logLine, err
+	}
+	return string(b), nil
+}
+
 func getS3Client(ctx context.Context, region string) (*s3.Client, error) {
 	var s3Client *s3.Client
 
@@ -280,7 +383,18 @@ func parseS3Log(ctx context.Context, b *batch, labels map[string]string, obj io.
 			}
 		}
 
-		if err := b.add(ctx, entry{ls, logproto.Entry{
+		lineLS := ls
+		if labels["type"] == LbLogType {
+			dynLabels := parseALBDynamicLabels(logLine)
+			lineLS = ls.Merge(dynLabels)
+
+			jsonLine, err := albLogLineToJSON(logLine)
+			if err == nil {
+				logLine = jsonLine
+			}
+		}
+
+		if err := b.add(ctx, entry{lineLS, logproto.Entry{
 			Line:      logLine,
 			Timestamp: timestamp,
 		}}); err != nil {

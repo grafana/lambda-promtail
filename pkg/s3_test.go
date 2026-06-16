@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"io"
 	"os"
 	"reflect"
@@ -12,6 +13,7 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/go-kit/log"
 	"github.com/grafana/loki/v3/pkg/logproto"
+	"github.com/prometheus/common/model"
 	"github.com/stretchr/testify/require"
 )
 
@@ -1110,4 +1112,49 @@ func TestGetUnixSecNsec(t *testing.T) {
 			require.Equal(t, tt.expectedNsec, nsec)
 		})
 	}
+}
+
+func Test_parseALBDynamicLabels(t *testing.T) {
+	// Real ALB log line format: type time elb client:port target:port req_proc tgt_proc resp_proc elb_status tgt_status recv_bytes sent_bytes "request" "user_agent" ssl_cipher ssl_protocol target_group_arn trace_id domain_name ...
+	albLine := `https 2026-06-15T12:40:00.025707Z app/fh-main-staging/ebd44fd556cc0492 77.230.108.141:19410 172.31.208.157:32965 0.039 1.450 0.000 200 200 1192 766 "POST https://ferryhapi.uat.ferryhopper.com/booking/estimate-prices HTTP/1.1" "Ferryhapi" TLS_AES_128_GCM_SHA256 TLSv1.3 arn:aws:elasticloadbalancing:eu-central-1:473136926504:targetgroup/ecs-fh-pro-crs-uat/0bc5d654815d925b "Self=1-6a2ff29e-668a41bf26725da60f62f553" "ferryhapi.uat.ferryhopper.com" "session-reused" 272 2026-06-15T12:39:58.475000Z "waf,forward" "-" "-" "172.31.208.157:32965" "200" "-" "-" TID_a694f89f60829748b14b24459ff3e361 "-" "-" "-"`
+
+	labels := parseALBDynamicLabels(albLine)
+
+	require.Equal(t, model.LabelValue("crs"), labels["service"], "service should be extracted from target group ARN")
+	require.Equal(t, model.LabelValue("uat"), labels["env"], "env should be extracted from target group ARN")
+}
+
+func Test_parseALBDynamicLabels_hostnamesFallback(t *testing.T) {
+	// Line with a target group that doesn't match the pattern — should fall back to hostname
+	albLine := `https 2026-06-15T12:40:00Z app/fh-main-staging/ebd44fd556cc0492 77.230.108.141:19410 172.31.208.157:32965 0.039 1.450 0.000 200 200 1192 766 "GET https://ferryhapi.staging.ferryhopper.com/ HTTP/1.1" "Mozilla" TLS_AES_128_GCM_SHA256 TLSv1.3 arn:aws:elasticloadbalancing:eu-central-1:473136926504:targetgroup/unknown/abc123 "trace" "ferryhapi.staging.ferryhopper.com"`
+
+	labels := parseALBDynamicLabels(albLine)
+
+	require.Equal(t, model.LabelValue("ferryhapi"), labels["service"], "service should fall back to hostname")
+	require.Equal(t, model.LabelValue("staging"), labels["env"], "env should fall back to hostname")
+}
+
+func Test_albLogLineToJSON(t *testing.T) {
+	albLine := `https 2026-06-15T12:40:00.025707Z app/fh-main-staging/ebd44fd556cc0492 77.230.108.141:19410 172.31.208.157:32965 0.039 1.450 0.000 200 200 1192 766 "POST https://ferryhapi.uat.ferryhopper.com/booking/estimate-prices HTTP/1.1" "Ferryhapi" TLS_AES_128_GCM_SHA256 TLSv1.3 arn:aws:elasticloadbalancing:eu-central-1:473136926504:targetgroup/ecs-fh-pro-crs-uat/0bc5d654815d925b "Self=1-6a2ff29e-668a41bf26725da60f62f553" "ferryhapi.uat.ferryhopper.com" "session-reused" 272 2026-06-15T12:39:58.475000Z "waf,forward" "-" "-" "172.31.208.157:32965" "200" "-" "-" TID_a694f89f60829748b14b24459ff3e361 "-" "-" "-"`
+
+	result, err := albLogLineToJSON(albLine)
+	require.NoError(t, err)
+
+	var entry albLogEntry
+	require.NoError(t, json.Unmarshal([]byte(result), &entry))
+
+	require.Equal(t, "200", entry.Status)
+	require.Equal(t, "POST", entry.ReqMethod)
+	require.Equal(t, "https://ferryhapi.uat.ferryhopper.com/booking/estimate-prices", entry.ReqURI)
+	require.Equal(t, "77.230.108.141", entry.RemAddr)
+	require.Equal(t, "ferryhapi.uat.ferryhopper.com", entry.Host)
+	require.Equal(t, "TLSv1.3", entry.SSLProtocol)
+	require.Equal(t, "1.450", entry.UpstreamRT)
+}
+
+func Test_albLogLineToJSON_tooFewFields(t *testing.T) {
+	short := `https 2026-06-15T12:40:00Z app/fh-main-staging/ebd44`
+	result, err := albLogLineToJSON(short)
+	require.NoError(t, err)
+	require.Equal(t, short, result, "should return raw line when too few fields")
 }

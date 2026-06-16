@@ -2,20 +2,18 @@ name: Release
 
 on:
   push:
-    branches:
-      - main
     tags:
       - 'v*'
 
 jobs:
-  build:
+  build-and-release:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      id-token: write
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
       - name: Setup Go
         uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6
         with:
@@ -23,54 +21,27 @@ jobs:
           cache: false
 
       - name: Set version
-        shell: bash
         run: echo "VERSION=$(./tools/version)" >> $GITHUB_ENV
 
       - name: Build
         run: GOOS=linux CGO_ENABLED=0 go build -o ./bootstrap ./...
 
       - name: Package
-        shell: bash
-        run: zip "lambda-promtail-$VERSION.zip" bootstrap
+        run: zip "lambda-promtail-${{ env.VERSION }}.zip" bootstrap
 
-      - name: AWS Auth Dev
-        id: aws-auth-dev
-        if: ${{ !startsWith(github.ref, 'refs/tags/v') && github.ref == 'refs/heads/main' }}
-        uses: grafana/shared-workflows/actions/aws-auth@85022085ed5314601c05d10e846de56bdd71e369 # aws-auth/v1.0.3
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-region: "us-east-2"
-          role-arn: "arn:aws:iam::410348018613:role/github-actions/lambda-promtail-release-write-role"
-          pass-claims: "repository_owner, repository_name, job_workflow_ref, ref, event_name"
-          set-creds-in-environment: true
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-central-1
 
-      - name: Upload Dev
-        if: ${{ !startsWith(github.ref, 'refs/tags/v') && github.ref == 'refs/heads/main' }}
+      - name: Upload to S3
         run: |
-          aws s3 cp "lambda-promtail-$VERSION.zip" s3://grafanalabs-dev-cf-templates/lambda-promtail/ --acl public-read
-          aws s3 cp lambda-promtail.yaml s3://grafanalabs-dev-cf-templates/cloudwatch-logs/ --acl public-read
-          aws s3 cp aws-alb-logs.yaml s3://grafanalabs-dev-cf-templates/logs-with-lambda/ --acl public-read
-          aws s3 cp aws-eventbridge-logs.yaml s3://grafanalabs-dev-cf-templates/logs-with-lambda/ --acl public-read
-
-      - name: AWS Auth Prod
-        id: aws-auth-prod
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: grafana/shared-workflows/actions/aws-auth@85022085ed5314601c05d10e846de56bdd71e369 # aws-auth/v1.0.3
-        with:
-          aws-region: "us-east-2"
-          role-arn: "arn:aws:iam::008923505280:role/github-actions/lambda-promtail-release-write-role"
-          pass-claims: "repository_owner, repository_name, job_workflow_ref, ref, event_name"
-          set-creds-in-environment: true
-
-      - name: Upload Prod
-        if: startsWith(github.ref, 'refs/tags/v')
-        run: |
-          aws s3 cp "lambda-promtail-$VERSION.zip" s3://grafanalabs-cf-templates/lambda-promtail/ --acl public-read
-          aws s3 cp lambda-promtail.yaml s3://grafanalabs-cf-templates/cloudwatch-logs/ --acl public-read
-          aws s3 cp aws-alb-logs.yaml s3://grafanalabs-cf-templates/logs-with-lambda/ --acl public-read
-          aws s3 cp aws-eventbridge-logs.yaml s3://grafanalabs-cf-templates/logs-with-lambda/ --acl public-read
+          aws s3 cp "lambda-promtail-${{ env.VERSION }}.zip" \
+            s3://fh-lambda-artifacts-staging/lambda-promtail-${{ env.VERSION }}.zip
 
       - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
         with:
           files: lambda-promtail-${{ env.VERSION }}.zip
