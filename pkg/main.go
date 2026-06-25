@@ -33,17 +33,18 @@ const (
 )
 
 var (
-	writeAddress                                                             *url.URL
-	username, password, extraLabelsRaw, dropLabelsRaw, tenantID, bearerToken string
-	keepStream                                                               bool
-	batchSize                                                                int
-	pipelineTimeout                                                          time.Duration
-	s3Clients                                                                map[string]*s3.Client
-	extraLabels                                                              model.LabelSet
-	dropLabels                                                               []model.LabelName
-	skipTLSVerify                                                            bool
-	printLogLine                                                             bool
-	relabelConfigs                                                           []*relabel.Config
+	writeAddress                            *url.URL
+	extraLabelsRaw, dropLabelsRaw, tenantID string
+	authOptions                             []AuthOption
+	keepStream                              bool
+	batchSize                               int
+	pipelineTimeout                         time.Duration
+	s3Clients                               map[string]*s3.Client
+	extraLabels                             model.LabelSet
+	dropLabels                              []model.LabelName
+	skipTLSVerify                           bool
+	printLogLine                            bool
+	relabelConfigs                          []*relabel.Config
 )
 
 func setupArguments(ctx context.Context, secretFetcher secretFetcher) {
@@ -72,11 +73,11 @@ func setupArguments(ctx context.Context, secretFetcher secretFetcher) {
 		panic(err)
 	}
 
-	username, err = loadSensitiveEnv(ctx, secretFetcher, "USERNAME")
+	username, err := loadSensitiveEnv(ctx, secretFetcher, "USERNAME")
 	if err != nil {
 		panic(err)
 	}
-	password, err = loadSensitiveEnv(ctx, secretFetcher, "PASSWORD")
+	password, err := loadSensitiveEnv(ctx, secretFetcher, "PASSWORD")
 	if err != nil {
 		panic(err)
 	}
@@ -85,7 +86,7 @@ func setupArguments(ctx context.Context, secretFetcher secretFetcher) {
 		panic("both username and password must be set if either one is set")
 	}
 
-	bearerToken, err = loadSensitiveEnv(ctx, secretFetcher, "BEARER_TOKEN")
+	bearerToken, err := loadSensitiveEnv(ctx, secretFetcher, "BEARER_TOKEN")
 	if err != nil {
 		panic(err)
 	}
@@ -94,13 +95,44 @@ func setupArguments(ctx context.Context, secretFetcher secretFetcher) {
 		panic("both username and bearerToken are not allowed")
 	}
 
+	tenantID = os.Getenv("TENANT_ID")
+
+	// Workload identity federation: when WIF_AUDIENCE is set we fetch a short-lived
+	// web identity JWT from AWS STS and send it as `Authorization: Bearer <tenantID>:<JWT>`.
+	wifAudience := os.Getenv("WIF_AUDIENCE")
+	wifRoleARN := os.Getenv("WIF_ROLE_ARN")
+	if wifAudience != "" {
+		if username != "" || bearerToken != "" {
+			panic("WIF_AUDIENCE cannot be combined with username/password or bearer token auth")
+		}
+		if tenantID == "" {
+			panic("TENANT_ID must be set when WIF_AUDIENCE is used")
+		}
+	}
+
+	authOptions = nil
+	if tenantID != "" {
+		authOptions = append(authOptions, tenantIDOption{tenantID: tenantID})
+	}
+	if username != "" && password != "" {
+		authOptions = append(authOptions, basicAuthOption{username: username, password: password})
+	}
+	if bearerToken != "" {
+		authOptions = append(authOptions, bearerTokenOption{token: bearerToken})
+	}
+	if wifAudience != "" {
+		stsOption, err := newSTSWebIdentityOption(ctx, tenantID, wifAudience, wifRoleARN)
+		if err != nil {
+			panic(err)
+		}
+		authOptions = append(authOptions, stsOption)
+	}
+
 	skipTLS := os.Getenv("SKIP_TLS_VERIFY")
 	// Anything other than case-insensitive 'true' is treated as 'false'.
 	if strings.EqualFold(skipTLS, "true") {
 		skipTLSVerify = true
 	}
-
-	tenantID = os.Getenv("TENANT_ID")
 
 	keep := os.Getenv("KEEP_STREAM")
 	// Anything other than case-insensitive 'true' is treated as 'false'.
@@ -279,6 +311,7 @@ func handler(ctx context.Context, ev map[string]interface{}) error {
 			timeout:       timeout,
 			skipTLSVerify: skipTLSVerify,
 		},
+		auth: authOptions,
 	}, log)
 
 	lokiStageConfigs, err := ParsePipelineConfigs(os.Getenv("LOKI_STAGE_CONFIGS"), *log, metrics)

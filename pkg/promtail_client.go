@@ -14,6 +14,43 @@ type Client interface {
 	sendToPromtail(ctx context.Context, b *batch) error
 }
 
+// AuthOption mutates an outgoing request to add authentication information.
+// Options are applied in the order they are passed to the client.
+type AuthOption interface {
+	Apply(ctx context.Context, req *http.Request) error
+}
+
+// basicAuthOption sets HTTP basic auth credentials on the request.
+type basicAuthOption struct {
+	username string
+	password string
+}
+
+func (o basicAuthOption) Apply(_ context.Context, req *http.Request) error {
+	req.SetBasicAuth(o.username, o.password)
+	return nil
+}
+
+// bearerTokenOption sets a static bearer token Authorization header on the request.
+type bearerTokenOption struct {
+	token string
+}
+
+func (o bearerTokenOption) Apply(_ context.Context, req *http.Request) error {
+	req.Header.Set("Authorization", "Bearer "+o.token)
+	return nil
+}
+
+// tenantIDOption sets the X-Scope-OrgID header used by Loki for multi-tenancy.
+type tenantIDOption struct {
+	tenantID string
+}
+
+func (o tenantIDOption) Apply(_ context.Context, req *http.Request) error {
+	req.Header.Set("X-Scope-OrgID", o.tenantID)
+	return nil
+}
+
 // Implements Client
 type promtailClient struct {
 	config *promtailClientConfig
@@ -24,6 +61,7 @@ type promtailClient struct {
 type promtailClientConfig struct {
 	backoff *backoff.Config
 	http    *httpClientConfig
+	auth    []AuthOption
 }
 
 type httpClientConfig struct {

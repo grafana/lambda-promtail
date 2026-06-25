@@ -20,6 +20,23 @@ Parameters:
     Type: String
     Default: ""
     NoEcho: true
+  TenantID:
+    Description: The Loki tenant ID, sent as the X-Scope-OrgID header. Required when WifAudience is set.
+    Type: String
+    Default: ""
+  WifAudience:
+    Description: >
+      The audience of the AWS STS web identity token used for workload identity federation (WIF) with
+      Grafana Cloud. When set, a short-lived JWT is fetched from AWS STS and sent as
+      'Authorization: Bearer <TenantID>:<JWT>'. Mutually exclusive with Username/Password.
+    Type: String
+    Default: ""
+  WifRoleArn:
+    Description: >
+      Optional IAM role ARN to assume before requesting the STS web identity token. Leave empty to use
+      the Lambda execution role directly. Only used when WifAudience is set.
+    Type: String
+    Default: ""
   KeepStream:
     Description: Determines whether to keep the CloudWatch Log Stream value as a Loki label when writing logs from lambda-promtail.
     Type: String
@@ -50,6 +67,9 @@ Metadata:
       - WriteAddress
       - Username
       - Password
+      - TenantID
+      - WifAudience
+      - WifRoleArn
     - Label:
         default: "Lambda function configuration"
       Parameters:
@@ -62,6 +82,10 @@ Metadata:
       Parameters:
       - KeepStream
       - ExtraLabels
+
+Conditions:
+  UseWif: !Not [!Equals [!Ref WifAudience, ""]]
+  HasWifRole: !Not [!Equals [!Ref WifRoleArn, ""]]
 
 Resources:
 
@@ -89,12 +113,35 @@ Resources:
             - logs:CreateLogStream
             - logs:PutLogEvents
             Resource: arn:aws:logs:*:*:*
-      RoleName: GrafanaLabsCloudWatchLogsIntegration
+      RoleName: !Sub "GrafanaLabsCloudWatchLogsIntegration-${AWS::StackName}"
+
+  # Grants the STS permissions needed for workload identity federation. Only created when
+  # WifAudience is set. When WifRoleArn is provided the Lambda role is allowed to assume it;
+  # otherwise the Lambda role fetches the web identity token directly.
+  LambdaPromtailWifPolicy:
+    Type: AWS::IAM::Policy
+    Condition: UseWif
+    Properties:
+      PolicyName: wif-sts
+      Roles:
+      - !Ref LambdaPromtailRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action: sts:GetWebIdentityToken
+          Resource: "*"
+        - !If
+          - HasWifRole
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Resource: !Ref WifRoleArn
+          - !Ref AWS::NoValue
 
   LambdaPromtailFunction:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: GrafanaCloudLambdaPromtail
+      FunctionName: !Sub "GrafanaCloudLambdaPromtail-${AWS::StackName}"
       Code:
         S3Bucket: !Ref S3BucketName
         S3Key: !Ref S3KeyName
@@ -109,6 +156,9 @@ Resources:
           WRITE_ADDRESS: !Ref WriteAddress
           USERNAME: !Ref Username
           PASSWORD: !Ref Password
+          TENANT_ID: !Ref TenantID
+          WIF_AUDIENCE: !Ref WifAudience
+          WIF_ROLE_ARN: !Ref WifRoleArn
           KEEP_STREAM: !Ref KeepStream
           EXTRA_LABELS: !Ref ExtraLabels
 

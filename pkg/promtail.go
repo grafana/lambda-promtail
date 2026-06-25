@@ -207,16 +207,10 @@ func (c *promtailClient) send(ctx context.Context, buf []byte) (int, error) {
 	req.Header.Set("Content-Type", contentType)
 	req.Header.Set("User-Agent", userAgent)
 
-	if tenantID != "" {
-		req.Header.Set("X-Scope-OrgID", tenantID)
-	}
-
-	if username != "" && password != "" {
-		req.SetBasicAuth(username, password)
-	}
-
-	if bearerToken != "" {
-		req.Header.Set("Authorization", "Bearer "+bearerToken)
+	for _, opt := range c.config.auth {
+		if err := opt.Apply(ctx, req); err != nil {
+			return -1, err
+		}
 	}
 
 	resp, err := c.http.Do(req.WithContext(ctx))
