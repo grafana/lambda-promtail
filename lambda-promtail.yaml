@@ -113,7 +113,7 @@ Resources:
             - logs:CreateLogStream
             - logs:PutLogEvents
             Resource: arn:aws:logs:*:*:*
-      RoleName: GrafanaLabsCloudWatchLogsIntegration
+      RoleName: !Sub "GrafanaLabsCloudWatchLogsIntegration-${AWS::StackName}"
 
   # Grants the STS permissions needed for workload identity federation. Only created when
   # WifAudience is set. When WifRoleArn is provided the Lambda role is allowed to assume it;
@@ -141,7 +141,7 @@ Resources:
   LambdaPromtailFunction:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: GrafanaCloudLambdaPromtail
+      FunctionName: !Sub "GrafanaCloudLambdaPromtail-${AWS::StackName}"
       Code:
         S3Bucket: !Ref S3BucketName
         S3Key: !Ref S3KeyName
