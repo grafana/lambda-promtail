@@ -194,7 +194,8 @@ func applyRelabelConfigs(labels model.LabelSet) model.LabelSet {
 		builder.Add(string(name), string(value))
 	}
 
-	// Sort labels as required by Process
+	// Sort labels as required by Process (binary search under stringlabels builds)
+	builder.Sort()
 	promLabels := builder.Labels()
 
 	// Apply relabeling
