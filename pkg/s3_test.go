@@ -59,7 +59,7 @@ func Test_getLabels(t *testing.T) {
 			},
 			wantErr: false,
 		},
-		{	name: "s3_alb",
+		{name: "s3_alb",
 			args: args{
 				record: events.S3EventRecord{
 					AWSRegion: "us-east-1",
