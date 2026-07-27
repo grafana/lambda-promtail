@@ -11,7 +11,7 @@ Deploy Lambda Promtail with the [CloudFormation](https://aws.amazon.com/cloudfor
 
 The repository provides the following templates:
 
-- [`lambda-promtail.yaml`](https://github.com/grafana/lambda-promtail/blob/main/lambda-promtail.yaml): Forwards CloudWatch logs. It subscribes one CloudWatch log group to the function.
+- [`lambda-promtail.yaml`](https://github.com/grafana/lambda-promtail/blob/main/lambda-promtail.yaml): Forwards Amazon CloudWatch logs. It subscribes one CloudWatch log group to the function.
 - [`aws-eventbridge-logs.yaml`](https://github.com/grafana/lambda-promtail/blob/main/aws-eventbridge-logs.yaml): Forwards S3-based logs using EventBridge. Use this template to work around the S3 bucket notification limitation described in [Forward S3 logs with EventBridge](_index.md#forward-s3-logs-with-eventbridge).
 - [`aws-alb-logs.yaml`](https://github.com/grafana/lambda-promtail/blob/main/aws-alb-logs.yaml): Forwards Application Load Balancer access logs from S3 using EventBridge.
 

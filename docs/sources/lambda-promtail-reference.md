@@ -153,7 +153,7 @@ Each relabel rule supports the following fields. All fields are optional except 
 - `modulus`: The modulus for the `hashmod` action.
 - `action`: One of the supported actions.
 
-### Relabeling order and behavior
+### Relabel order and behavior
 
 - Relabeling runs after the function merges the labels from `EXTRA_LABELS` and drops the labels specified by `DROP_LABELS`.
 - If relabeling removes all labels from an entry, the function drops the entry.

@@ -39,7 +39,7 @@ Where you need a collector between Lambda Promtail and Loki, use Grafana Alloy.
 Lambda Promtail processes events from the following sources:
 
 - **Amazon CloudWatch Logs**: Subscribe a CloudWatch log group to the function with a subscription filter.
-- **Kinesis Data Streams**: Map a Kinesis data stream as an event source, for example to receive CloudFront real-time logs.
+- **Amazon Kinesis Data Streams**: Map a Kinesis data stream as an event source, for example to receive CloudFront real-time logs.
 - **Amazon S3**: Trigger the function when objects are created in a bucket, either through S3 bucket notifications or through Amazon EventBridge. Lambda Promtail parses the following S3-based log types from the object key:
   - VPC flow logs
   - Application and Network Load Balancer access logs
@@ -72,7 +72,7 @@ Use them to decide whether Lambda Promtail fits your needs and to choose the dep
 
 Lambda Promtail is an effective way to monitor ephemeral jobs, such as those that run on AWS Lambda, which are otherwise hard to monitor with one of the other Loki [clients](../).
 
-Ephemeral jobs can easily violate cardinality best practices.
+Ephemeral jobs can violate cardinality best practices.
 Under high request load, an AWS Lambda function can increase in concurrency and create many log streams in CloudWatch.
 For this reason, Lambda Promtail doesn't keep the log stream value as a label by default.
 This is possible because current versions of Loki no longer have an ingestion ordering constraint on logs within a single stream.

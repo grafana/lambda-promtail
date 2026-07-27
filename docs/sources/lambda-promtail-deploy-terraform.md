@@ -10,7 +10,7 @@ weight: 100
 Deploy Lambda Promtail with the [Terraform](https://www.terraform.io/) configuration in the [lambda-promtail repository](https://github.com/grafana/lambda-promtail).
 The main configuration is in [`main.tf`](https://github.com/grafana/lambda-promtail/blob/main/main.tf), and the input variables are defined in [`variables.tf`](https://github.com/grafana/lambda-promtail/blob/main/variables.tf).
 
-The Terraform configuration accepts arrays of CloudWatch log group names, S3 bucket names, and Kinesis stream names, and can also configure VPC subnets and security groups.
+The Terraform configuration accepts arrays of Amazon CloudWatch log group names, S3 bucket names, and Amazon Kinesis Data stream names, and can also configure VPC subnets and security groups.
 
 ## Before you begin
 
@@ -80,7 +80,7 @@ terraform apply \
   -var "lambda_promtail_binary_key=lambda-promtail.zip"
 ```
 
-To forward logs from Kinesis data streams, for example CloudFront real-time logs:
+To forward logs from Kinesis data streams, for example Amazon CloudFront real-time logs:
 
 ```bash
 terraform apply \
