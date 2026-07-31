@@ -12,7 +12,7 @@ Deploy Lambda Promtail with the [CloudFormation](https://aws.amazon.com/cloudfor
 The repository provides the following templates:
 
 - [`lambda-promtail.yaml`](https://github.com/grafana/lambda-promtail/blob/main/lambda-promtail.yaml): Forwards Amazon CloudWatch logs. It subscribes one CloudWatch log group to the function.
-- [`aws-eventbridge-logs.yaml`](https://github.com/grafana/lambda-promtail/blob/main/aws-eventbridge-logs.yaml): Forwards S3-based logs using EventBridge. Use this template to work around the S3 bucket notification limitation described in [Forward S3 logs with EventBridge](_index.md#forward-s3-logs-with-eventbridge).
+- [`aws-eventbridge-logs.yaml`](https://github.com/grafana/lambda-promtail/blob/main/aws-eventbridge-logs.yaml): Forwards S3-based logs using EventBridge. Use this template to work around the S3 bucket notification limitation described in [Forward S3 logs with EventBridge](/docs/loki/latest/send-data/lambda-promtail/#forward-s3-logs-with-eventbridge).
 - [`aws-alb-logs.yaml`](https://github.com/grafana/lambda-promtail/blob/main/aws-alb-logs.yaml): Forwards Application Load Balancer access logs from S3 using EventBridge.
 
 If you define your infrastructure with CloudFormation and forward S3-based logs, use the EventBridge template for easier deployment.
@@ -94,7 +94,7 @@ Availability depends on the template, so check the `Parameters` section of the t
 - `SkipTlsVerify`: Set to `true` for development only, to skip TLS certificate verification.
 - `ReservedConcurrency`: The maximum number of concurrent executions to reserve for the function.
 
-For details about each option, refer to the [Lambda Promtail reference](lambda-promtail-reference.md).
+For details about each option, refer to the [Lambda Promtail reference](/docs/loki/latest/send-data/lambda-promtail/lambda-promtail-reference/).
 
 ## Update a stack
 

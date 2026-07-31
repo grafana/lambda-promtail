@@ -15,7 +15,7 @@ It receives events from AWS log sources, converts them into Loki log entries, an
 The [lambda-promtail](https://github.com/grafana/lambda-promtail) project is maintained as its own repository, independently versioned from Loki, and provides Terraform and CloudFormation definitions you can deploy directly into your AWS account.
 
 {{< admonition type="note" >}}
-If you use Grafana Cloud and want a guided setup with generated Terraform or CloudFormation, API credentials, and your Loki write endpoint filled in for you, use the Cloud Provider Observability [Logs with Lambda](/docs/grafana-cloud/monitor-infrastructure/monitor-cloud-provider/aws/logs/cloudwatch-logs/) workflow instead.
+If you use Grafana Cloud and want a guided setup with generated Terraform or CloudFormation, API credentials, and your Loki write endpoint filled in for you, use the Cloud Provider Observability [Logs with Lambda](/docs/grafana-cloud/observe-and-act/monitor-infrastructure/monitor-cloud-provider/aws/logs/cloudwatch-logs/) workflow instead.
 This page covers self-managed deployment: customizing the Terraform or CloudFormation files directly, building the function from source, and advanced patterns such as Amazon Kinesis and relabeling.
 {{< /admonition >}}
 

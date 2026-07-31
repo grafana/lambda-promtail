@@ -36,7 +36,7 @@ Depending on your endpoint and event sources, you typically also set:
 - One or more of `log_group_names`, `bucket_names`, or `kinesis_stream_name` to define the event sources.
 
 The Terraform configuration passes these values to the function as environment variables.
-For the complete list of options, refer to the [Lambda Promtail reference](lambda-promtail-reference.md).
+For the complete list of options, refer to the [Lambda Promtail reference](/docs/loki/latest/send-data/lambda-promtail/lambda-promtail-reference/).
 
 ## Set the AWS region
 
@@ -102,7 +102,7 @@ Add any of the following variables to `terraform apply` to change the default be
 - Skip TLS verification for development only: `-var 'skip_tls_verify="true"'`
 - Change the batch size in bytes: `-var 'batch_size=131072'`
 
-For details about each option, refer to the [Lambda Promtail reference](lambda-promtail-reference.md).
+For details about each option, refer to the [Lambda Promtail reference](/docs/loki/latest/send-data/lambda-promtail/lambda-promtail-reference/).
 
 ## Store credentials in AWS Secrets Manager or SSM
 
@@ -124,10 +124,10 @@ Every subnet must be able to reach the write address.
 The Terraform configuration creates a subscription filter for each name in `log_group_names` with an empty filter pattern, so it forwards all log events.
 It doesn't accept filter patterns for regular expression filtering on log contents.
 
-To filter log contents, extend the Terraform configuration to set a `filter_pattern` for a specific log group, or forward logs to a [Grafana Alloy](https://grafana.com/docs/alloy/latest/) collector and filter them with the [`loki.process`](https://grafana.com/docs/alloy/latest/reference/components/loki/loki.process/) component.
+To filter log contents, extend the Terraform configuration to set a `filter_pattern` for a specific log group, or forward logs to a [Grafana Alloy](/docs/alloy/latest/) collector and filter them with the [`loki.process`](/docs/alloy/latest/reference/components/loki/loki.process/) component.
 
 ## Trigger the function through SQS
 
 To trigger the function through an SQS queue instead of directly, set `sqs_enabled=true`.
 This creates an SQS queue and a dead-letter queue for on-failure recovery.
-For more information, refer to [Recover logs on failure with an SQS dead-letter queue](_index.md#recover-logs-on-failure-with-an-sqs-dead-letter-queue).
+For more information, refer to [Recover logs on failure with an SQS dead-letter queue](/docs/loki/latest/send-data/lambda-promtail/#recover-logs-on-failure-with-an-sqs-dead-letter-queue).

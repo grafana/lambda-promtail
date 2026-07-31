@@ -163,17 +163,41 @@ Each relabel rule supports the following fields. All fields are optional except 
 
 ## Pipeline stages
 
-Set the `LOKI_STAGE_CONFIGS` environment variable to a JSON array of [Loki pipeline stages](/docs/loki/<LOKI_VERSION>/send-data/promtail/pipelines/) to transform entries before the function forwards them.
-Each entry is processed synchronously.
-If a stage doesn't finish within `PIPELINE_TIMEOUT`, the function drops the entry.
+Set the `LOKI_STAGE_CONFIGS` environment variable to transform entries before the function forwards them.
+The value is a JSON array of pipeline stages, where each element maps a stage name to its configuration.
+Each entry is processed synchronously. If a stage doesn't finish within `PIPELINE_TIMEOUT`, the function drops the entry.
+
+Lambda Promtail uses the same log-processing stages as Grafana Alloy.
+For the available stages and their options, refer to the [`loki.process` component](/docs/alloy/latest/reference/components/loki/loki.process/) in the Grafana Alloy documentation.
+The Alloy documentation describes each stage in Alloy syntax. In `LOKI_STAGE_CONFIGS`, provide the equivalent configuration as JSON.
+
+For example, the following value extracts fields from a JSON log line and then promotes the `level` field to a label:
+
+```json
+[
+  {
+    "json": {
+      "expressions": {
+        "level": "level",
+        "message": "msg"
+      }
+    }
+  },
+  {
+    "labels": {
+      "level": ""
+    }
+  }
+]
+```
 
 ## Example Grafana Alloy configuration
 
-Instead of writing directly to Loki, you can forward logs from Lambda Promtail to a [Grafana Alloy](https://grafana.com/docs/alloy/latest/) collector, which then writes to Loki.
+Instead of writing directly to Loki, you can forward logs from Lambda Promtail to a [Grafana Alloy](/docs/alloy/latest/) collector, which then writes to Loki.
 
 {{< admonition type="note" >}}
 Promtail is deprecated and at end of life.
-Use [Grafana Alloy](https://grafana.com/docs/alloy/latest/) as the collector between Lambda Promtail and Loki.
+Use [Grafana Alloy](/docs/alloy/latest/) as the collector between Lambda Promtail and Loki.
 Alloy is compatible with the Loki push API through its [`loki.source.api`](/docs/alloy/latest/reference/components/loki/loki.source.api/) component.
 {{< /admonition >}}
 
