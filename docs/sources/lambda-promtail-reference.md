@@ -8,7 +8,7 @@ weight: 300
 # Lambda Promtail reference
 
 This page describes the environment variables, propagated labels, relabeling, and limitations for Lambda Promtail.
-The Terraform and CloudFormation deployments set most of these values for you. For deployment steps, refer to [Deploy with Terraform](lambda-promtail-deploy-terraform.md) and [Deploy with CloudFormation](lambda-promtail-deploy-cloudformation.md).
+The Terraform and CloudFormation deployments set most of these values for you. For deployment steps, refer to [Deploy with Terraform](/docs/loki/latest/send-data/lambda-promtail/lambda-promtail-deploy-terraform) and [Deploy with CloudFormation](/docs/loki/latest/send-data/lambda-promtail/lambda-promtail-deploy-cloudformation).
 
 ## Environment variables
 
@@ -17,11 +17,11 @@ Lambda Promtail reads its configuration from the following environment variables
 | Variable | Default | Description |
 | --- | --- | --- |
 | `WRITE_ADDRESS` | none, required | The Loki write API compatible endpoint to write logs to, in the form `https://<hostname>/loki/api/v1/push`. |
-| `USERNAME` | empty | The basic authentication username. If set, you must also set `PASSWORD`. Accepts a value or the ARN of an AWS Secrets Manager secret or SSM parameter. |
+| `USERNAME` | empty | The basic authentication username. If set, you must also set `PASSWORD`. Accepts a value or the Amazon ARN of an AWS Secrets Manager secret or Amazon SSM parameter. |
 | `PASSWORD` | empty | The basic authentication password. If set, you must also set `USERNAME`. Accepts a value or an ARN. |
 | `BEARER_TOKEN` | empty | A bearer token for the `Authorization` header. You can't set it together with `USERNAME`. Accepts a value or an ARN. |
 | `TENANT_ID` | empty | The tenant ID, sent as the `X-Scope-OrgID` header. |
-| `KEEP_STREAM` | `false` | Set to `true` to keep the CloudWatch log stream value as the `__aws_cloudwatch_log_stream` label. |
+| `KEEP_STREAM` | `false` | Set to `true` to keep the Amazon CloudWatch log stream value as the `__aws_cloudwatch_log_stream` label. |
 | `BATCH_SIZE` | `131072` | The batch size in bytes at which the function flushes logs. The default is 128 KB. |
 | `EXTRA_LABELS` | empty | A comma-separated list of `name,value` pairs to add to every entry. By default, each label name is prefixed with `__extra_`. |
 | `OMIT_EXTRA_LABELS_PREFIX` | `false` | Set to `true` to omit the `__extra_` prefix from the labels defined in `EXTRA_LABELS`. |
@@ -48,7 +48,7 @@ Incoming logs are assigned special labels that you can use in relabeling or in l
 | `__aws_cloudwatch_log_group` | The CloudWatch log group for this log. |
 | `__aws_cloudwatch_log_stream` | The CloudWatch log stream for this log. Present only when `KEEP_STREAM` is `true`. |
 | `__aws_cloudwatch_owner` | The AWS ID of the owner of the event. |
-| `__aws_kinesis_event_source_arn` | The Kinesis event source ARN. |
+| `__aws_kinesis_event_source_arn` | The Amazon Kinesis event source ARN. |
 | `__aws_<log_type>` | For S3-based logs, the source identifier extracted from the object key, for example the load balancer name for `s3_lb`. |
 | `__aws_<log_type>_owner` | For S3-based logs, the account ID of the log owner. |
 
@@ -63,7 +63,7 @@ For example, an Application Load Balancer log receives the labels `__aws_log_typ
 Lambda Promtail supports Prometheus-style relabeling through the `RELABEL_CONFIGS` environment variable.
 Use relabeling to modify, keep, or drop labels before the function sends logs to Loki.
 Provide the configuration as a JSON array of relabel rules.
-Relabeling follows the same principles as Prometheus relabeling. For a detailed explanation, refer to [How relabeling in Prometheus works](https://grafana.com/blog/2022/03/21/how-relabeling-in-prometheus-works/).
+Relabeling follows the same principles as Prometheus relabeling. For a detailed explanation, refer to [How relabeling in Prometheus works](/blog/2022/03/21/how-relabeling-in-prometheus-works/).
 
 ### Example configurations
 
@@ -163,7 +163,7 @@ Each relabel rule supports the following fields. All fields are optional except 
 
 ## Pipeline stages
 
-Set the `LOKI_STAGE_CONFIGS` environment variable to a JSON array of [Loki pipeline stages](https://grafana.com/docs/loki/<LOKI_VERSION>/send-data/promtail/pipelines/) to transform entries before the function forwards them.
+Set the `LOKI_STAGE_CONFIGS` environment variable to a JSON array of [Loki pipeline stages](/docs/loki/<LOKI_VERSION>/send-data/promtail/pipelines/) to transform entries before the function forwards them.
 Each entry is processed synchronously.
 If a stage doesn't finish within `PIPELINE_TIMEOUT`, the function drops the entry.
 
@@ -174,11 +174,12 @@ Instead of writing directly to Loki, you can forward logs from Lambda Promtail t
 {{< admonition type="note" >}}
 Promtail is deprecated and at end of life.
 Use [Grafana Alloy](https://grafana.com/docs/alloy/latest/) as the collector between Lambda Promtail and Loki.
-Alloy is compatible with the Loki push API through its [`loki.source.api`](https://grafana.com/docs/alloy/latest/reference/components/loki/loki.source.api/) component.
+Alloy is compatible with the Loki push API through its [`loki.source.api`](/docs/alloy/latest/reference/components/loki/loki.source.api/) component.
 {{< /admonition >}}
 
 The following Alloy configuration receives logs on the Loki push API endpoint, maps the special `__aws_*` labels to Loki labels, and forwards the entries to Loki.
 Set the Lambda Promtail `WRITE_ADDRESS` to the Alloy endpoint, for example `http://<alloy-host>:3500/loki/api/v1/push`.
+In the `loki.write` component, select the highlighted placeholder to enter your own Loki write endpoint.
 
 ```alloy
 // Receive logs from Lambda Promtail on the Loki push API endpoint.
@@ -223,7 +224,7 @@ loki.relabel "lambda_promtail" {
 // Forward received logs to Loki.
 loki.write "default" {
   endpoint {
-    url = "http://ip_or_hostname_where_Loki_runs:3100/loki/api/v1/push"
+    url = "http://@@@LOKI_ENDPOINT@@@:3100/loki/api/v1/push"
   }
 }
 ```
@@ -270,7 +271,7 @@ Current versions of Loki removed the ordering constraint, so this is no longer r
 
 Forwarding through a collector moves the worst-case stream cardinality from the number of log streams to the number of log groups multiplied by the number of collectors.
 When you run a set of collectors behind a load balancer, assign each collector a unique label so that logs for the same log group don't cause out-of-order errors.
-In Grafana Alloy, add a unique label with the `external_labels` argument of the [`loki.write`](https://grafana.com/docs/alloy/latest/reference/components/loki/loki.write/) component, for example `external_labels = { collector = constants.hostname }`.
+In Grafana Alloy, add a unique label with the `external_labels` argument of the [`loki.write`](/docs/alloy/latest/reference/components/loki/loki.write/) component, for example `external_labels = { collector = constants.hostname }`.
 Run a small number of collectors behind a load balancer according to your throughput and redundancy needs.
 
-If you haven't configured Loki to [accept out-of-order writes](https://grafana.com/docs/loki/<LOKI_VERSION>/configure/#accept-out-of-order-writes), the unique label is required.
+If you haven't configured Loki to [accept out-of-order writes](/docs/loki/<LOKI_VERSION>/configure/#accept-out-of-order-writes), the unique label is required.

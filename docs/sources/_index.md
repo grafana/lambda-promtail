@@ -9,13 +9,13 @@ weight: 700
 
 # Lambda Promtail
 
-Lambda Promtail is an [AWS Lambda](https://aws.amazon.com/lambda/) function that forwards logs from AWS services to [Grafana Loki](https://grafana.com/docs/loki/latest/) or to any Loki-push-API-compatible endpoint (Grafana Cloud or Grafana Alloy).
-It receives events from AWS log sources, converts them into Loki log entries, and sends them to a Loki write endpoint using the [Loki push API](https://grafana.com/docs/loki/latest/reference/api/#push-log-entries-to-loki).
+Lambda Promtail is an [AWS Lambda](https://aws.amazon.com/lambda/) function that forwards logs from AWS services to [Grafana Loki](/docs/loki/latest/) or to any Loki-push-API-compatible endpoint (Grafana Cloud or Grafana Alloy).
+It receives events from AWS log sources, converts them into Loki log entries, and sends them to a Loki write endpoint using the [Loki push API](/docs/loki/latest/reference/api/#push-log-entries-to-loki).
 
 The [lambda-promtail](https://github.com/grafana/lambda-promtail) project is maintained as its own repository, independently versioned from Loki, and provides Terraform and CloudFormation definitions you can deploy directly into your AWS account.
 
 {{< admonition type="note" >}}
-If you use Grafana Cloud and want a guided setup with generated Terraform or CloudFormation, API credentials, and your Loki write endpoint filled in for you, use the Cloud Provider Observability [Logs with Lambda](https://grafana.com/docs/grafana-cloud/monitor-infrastructure/monitor-cloud-provider/aws/logs/cloudwatch-logs/) workflow instead.
+If you use Grafana Cloud and want a guided setup with generated Terraform or CloudFormation, API credentials, and your Loki write endpoint filled in for you, use the Cloud Provider Observability [Logs with Lambda](/docs/grafana-cloud/monitor-infrastructure/monitor-cloud-provider/aws/logs/cloudwatch-logs/) workflow instead.
 This page covers self-managed deployment: customizing the Terraform or CloudFormation files directly, building the function from source, and advanced patterns such as Amazon Kinesis and relabeling.
 {{< /admonition >}}
 
@@ -27,7 +27,7 @@ Lambda Promtail detects the event type, parses the log records, attaches labels,
 The write address is any endpoint compatible with the Loki write API. This can be:
 
 - A Loki instance, such as a self-managed Loki cluster or Grafana Cloud Loki.
-- A [Grafana Alloy](https://grafana.com/docs/alloy/latest/) collector that receives logs through the Loki push API and forwards them to Loki.
+- A [Grafana Alloy](/docs/alloy/latest/) collector that receives logs through the Loki push API and forwards them to Loki.
 
 {{< admonition type="note" >}}
 The name Lambda Promtail refers to this Lambda function and is unrelated to the standalone Promtail agent, which is deprecated and end-of-life (EOL) as of March 2, 2026.
@@ -55,10 +55,10 @@ Lambda Promtail processes events from the following sources:
 
 You can deploy Lambda Promtail with either Terraform or CloudFormation:
 
-- [Deploy with Terraform](lambda-promtail-deploy-terraform.md): Recommended for most deployments. The Terraform configuration accepts arrays of log groups, buckets, and Kinesis streams, and can build the function from source or deploy a prebuilt ZIP archive.
-- [Deploy with CloudFormation](lambda-promtail-deploy-cloudformation.md): Use the provided templates for CloudWatch, S3 with EventBridge, and Application Load Balancer logs.
+- [Deploy with Terraform](/docs/loki/latest/send-data/lambda-promtail/lambda-promtail-deploy-terraform): Recommended for most deployments. The Terraform configuration accepts arrays of log groups, buckets, and Kinesis streams, and can build the function from source or deploy a prebuilt ZIP archive.
+- [Deploy with CloudFormation](/docs/loki/latest/send-data/lambda-promtail/lambda-promtail-deploy-cloudformation): Use the provided templates for CloudWatch, S3 with EventBridge, and Application Load Balancer logs.
 
-For all configuration options, propagated labels, and relabeling, refer to the [Lambda Promtail reference](lambda-promtail-reference.md).
+For all configuration options, propagated labels, and relabeling, refer to the [Lambda Promtail reference](/docs/loki/latest/send-data/lambda-promtail/lambda-promtail-reference).
 
 Grafana publishes a prebuilt ZIP archive of the function with each [release](https://github.com/grafana/lambda-promtail/releases), which you can deploy with Terraform or reference from CloudFormation.
 You can also clone the [lambda-promtail repository](https://github.com/grafana/lambda-promtail), modify the Go code, and build the function yourself.
@@ -81,7 +81,7 @@ This is possible because current versions of Loki no longer have an ingestion or
 
 If you use CloudWatch and want to try Loki in a low-risk way, Lambda Promtail lets you pipe CloudWatch logs to Loki regardless of the event source, such as Amazon EC2, Kubernetes, Lambda, or Amazon ECS, without deploying log collectors across your infrastructure.
 
-For long-term use, running [Grafana Alloy](https://grafana.com/docs/alloy/latest/) as a collector on your infrastructure is the recommended strategy for flexibility, reliability, performance, and cost.
+For long-term use, running [Grafana Alloy](/docs/alloy/latest/) as a collector on your infrastructure is the recommended strategy for flexibility, reliability, performance, and cost.
 
 {{< admonition type="note" >}}
 Forwarding logs from CloudWatch to Loki means that you still pay for CloudWatch.
@@ -119,4 +119,4 @@ From there, the S3 bucket sends an `Object Created` notification to the EventBri
 
 {{< figure src="https://grafana.com/media/docs/loki/lambda-promtail-with-eventbridge.png" alt="Diagram showing how logs are written from the source service into an S3 bucket and routed to Lambda Promtail through EventBridge" >}}
 
-For deployment steps, refer to [Deploy with CloudFormation](lambda-promtail-deploy-cloudformation.md).
+For deployment steps, refer to [Deploy with CloudFormation](/docs/loki/latest/send-data/lambda-promtail/lambda-promtail-deploy-cloudformation).
