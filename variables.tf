@@ -144,6 +144,12 @@ variable "relabel_configs" {
   default     = ""
 }
 
+variable "loki_stage_configs" {
+  type        = string
+  description = "JSON-encoded array of Promtail pipeline stages applied by lambda-promtail, e.g. a drop stage to filter noisy log lines by content before they are sent to Loki."
+  default     = ""
+}
+
 variable "omit_extra_labels_prefix" {
   type        = bool
   description = "Whether or not to omit the prefix `__extra_` from extra labels defined in the variable `extra_labels`."

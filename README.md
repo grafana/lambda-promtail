@@ -58,7 +58,7 @@ Then use Terraform to deploy:
 
 ```bash
 ## use cloudwatch log group
-terraform apply -var "write_address=https://your-loki-url/loki/api/v1/push" -var "password=<basic-auth-pw>" -var "username=<basic-auth-username>" -var 'bearer_token=<bearer-token>' -var 'log_group_names=["log-group-01", "log-group-02"]' -var 'extra_labels="name1,value1,name2,value2"' -var 'drop_labels="name1,name2"' -var 'relabel_configs=[{"source_labels":["label1"],"target_label":"new_label1","action":"replace"}]' -var "tenant_id=<value>" -var 'skip_tls_verify="false"'
+terraform apply -var "write_address=https://your-loki-url/loki/api/v1/push" -var "password=<basic-auth-pw>" -var "username=<basic-auth-username>" -var 'bearer_token=<bearer-token>' -var 'log_group_names=["log-group-01", "log-group-02"]' -var 'extra_labels="name1,value1,name2,value2"' -var 'drop_labels="name1,name2"' -var 'relabel_configs=[{"source_labels":["label1"],"target_label":"new_label1","action":"replace"}]' -var "tenant_id=<value>" -var 'skip_tls_verify="false"' -var 'loki_stage_configs=[{"drop":{"expression":"^END RequestId:.*"}}]'
 ```
 
 ```bash
@@ -78,6 +78,28 @@ aws cloudformation create-stack --stack-name lambda-promtail-stack --template-bo
 ```
 
 **NOTE:** To use CloudFormation, you must build the docker image with `docker build . -f tools/lambda-promtail/Dockerfile` from the root of the Loki repository, upload it to an ECR, and pass it as the `LambdaPromtailImage` parameter to cloudformation.
+
+## Filtering log lines with pipeline stages
+
+`lambda-promtail` supports [Promtail pipeline stages](https://grafana.com/docs/loki/latest/send-data/promtail/stages/)
+via the `LOKI_STAGE_CONFIGS` environment variable (Terraform variable
+`loki_stage_configs`). Use a `drop` stage to discard noisy log lines by content
+before they are sent to Loki, reducing ingestion volume and cost.
+
+For example, to drop AWS Lambda `END RequestId:` lines:
+
+```json
+[{"drop":{"expression":"^END RequestId:.*"}}]
+```
+
+Set it via Terraform:
+
+```bash
+terraform apply -var 'loki_stage_configs=[{"drop":{"expression":"^END RequestId:.*"}}]' ...
+```
+
+All Promtail stage types are supported (`drop`, `match`, `regex`, `labeldrop`,
+etc.). This is the recommended mechanism for content-based filtering.
 
 # Appendix
 
