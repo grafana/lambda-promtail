@@ -26,7 +26,40 @@ func Test_getLabels(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "s3_alb",
+			name: "s3_alb_conn_test",
+			args: args{
+				record: events.S3EventRecord{
+					AWSRegion: "us-east-1",
+					S3: events.S3Entity{
+						Bucket: events.S3Bucket{
+							Name: "elb_conn_logs_test",
+							OwnerIdentity: events.S3UserIdentity{
+								PrincipalID: "test",
+							},
+						},
+						Object: events.S3Object{
+							Key: "AWSLogs/123456789012/elasticloadbalancing/us-east-1/2023/10/04/conn_log_123456789012_elasticloadbalancing_us-east-1_app.my-connect-alb_20231004T1700Z_0.0.0.0_abcdef12.log.gz",
+						},
+					},
+				},
+			},
+			want: map[string]string{
+				"account_id":    "123456789012",
+				"bucket":        "elb_conn_logs_test",
+				"bucket_owner":  "test",
+				"bucket_region": "us-east-1",
+				"day":           "04",
+				"key":           "AWSLogs/123456789012/elasticloadbalancing/us-east-1/2023/10/04/conn_log_123456789012_elasticloadbalancing_us-east-1_app.my-connect-alb_20231004T1700Z_0.0.0.0_abcdef12.log.gz",
+				"month":         "10",
+				"region":        "us-east-1",
+				"lb_type":       LbAlbType,
+				"src":           "my-connect-alb",
+				"type":          LbLogType,
+				"year":          "2023",
+			},
+			wantErr: false,
+		},
+		{name: "s3_alb",
 			args: args{
 				record: events.S3EventRecord{
 					AWSRegion: "us-east-1",
