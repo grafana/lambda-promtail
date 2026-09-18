@@ -63,11 +63,7 @@ func newBatch(ctx context.Context, pClient Client, processingPipeline *LokiStage
 
 func (b *batch) add(ctx context.Context, e entry) error {
 	if b.processor.Size() > 0 {
-		// Clone e.labels before handing it to the pipeline. Callers (e.g. parseCWEvent,
-		// processLogEvents) share one labels map across every entry in a batch, but stages
-		// like structured_metadata mutate Entry.Labels in place -- deleting a label once it's
-		// promoted to structured metadata. Without cloning, that delete is visible to every
-		// other entry sharing the map, so only the first entry in a batch keeps the field.
+		// Clone to sruvive mutation downstream
 		labels := e.labels.Clone()
 
 		// Apply pipeline stages to entry
