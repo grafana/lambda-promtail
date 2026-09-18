@@ -63,7 +63,7 @@ func newBatch(ctx context.Context, pClient Client, processingPipeline *LokiStage
 
 func (b *batch) add(ctx context.Context, e entry) error {
 	if b.processor.Size() > 0 {
-		// Clone to sruvive mutation downstream
+		// Clone to survive mutation downstream
 		labels := e.labels.Clone()
 
 		// Apply pipeline stages to entry
