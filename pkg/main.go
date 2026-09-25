@@ -250,6 +250,20 @@ func handler(ctx context.Context, ev map[string]interface{}) error {
 		},
 	}, log)
 
+	// SIEM dual-sink: when SIEM_S3_BUCKET is set, ALSO write raw log lines to a
+	// central SIEM S3 bucket (best-effort — does not affect Loki delivery/retry).
+	// The Loki push (pClient) stays the primary/authoritative sink.
+	if siemBucket := os.Getenv("SIEM_S3_BUCKET"); siemBucket != "" {
+		s3sink, err := newS3Sink(ctx, siemBucket, os.Getenv("SIEM_S3_PREFIX"), log)
+		if err != nil {
+			// Do not fail ingestion if the SIEM sink can't init — log and continue
+			// with Loki only.
+			level.Error(*log).Log("msg", "siem s3 sink init failed; continuing with Loki only", "err", err) // nolint:errcheck
+		} else {
+			pClient = &multiSink{primary: pClient, secondary: []Client{s3sink}, log: log}
+		}
+	}
+
 	lokiStageConfigs, err := ParsePipelineConfigs(os.Getenv("LOKI_STAGE_CONFIGS"), *log, metrics)
 	if err != nil {
 		panic(err)
