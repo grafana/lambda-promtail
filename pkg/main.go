@@ -29,6 +29,8 @@ const (
 	maxErrMsgLen = 1024
 
 	invalidExtraLabelsError = "invalid value for environment variable EXTRA_LABELS. Expected a comma separated list with an even number of entries. "
+
+	defaultBatchSize = 131062 // see BATCH_SIZE in doc/sources/lambda-promtail-reference.md
 )
 
 var (
@@ -109,7 +111,7 @@ func setupArguments(ctx context.Context, secretFetcher secretFetcher) {
 	fmt.Println("keep stream: ", keepStream)
 
 	batch := os.Getenv("BATCH_SIZE")
-	batchSize = 131072
+	batchSize = defaultBatchSize
 	if batch != "" {
 		batchSize, _ = strconv.Atoi(batch)
 	}

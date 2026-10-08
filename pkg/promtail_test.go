@@ -38,7 +38,7 @@ func Test_batch_add_SharedLabelsAcrossBatch(t *testing.T) {
 		processor: pipeline,
 	}
 
-	batchSize = 131072 // large enough that add() never flushes mid-test
+	batchSize = defaultBatchSize // large enough that add() never flushes mid-test
 
 	for i, line := range []string{"first event", "second event", "third event"} {
 		err := b.add(context.Background(), entry{sharedLabels, logproto.Entry{
