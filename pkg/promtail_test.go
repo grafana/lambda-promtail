@@ -12,11 +12,10 @@ import (
 	"github.com/grafana/loki/pkg/push"
 )
 
-// Test_batch_add_SharedLabelsAcrossBatch reproduces
-// https://github.com/grafana/support-escalations/issues/24182: when a Lambda invocation
-// receives multiple log events in one batch (e.g. a CloudWatch put-log-events call with several
-// events), parseCWEvent/processLogEvents build one labels map and reuse it, by reference, for
-// every entry{} in the batch. The structured_metadata stage mutates Entry.Labels in place
+// Test_batch_add_SharedLabelsAcrossBatch reproduces a bug where, when a Lambda invocation
+// receives multiple log events in one batch (e.g. a CloudWatch put-log-events call with
+// several events), parseCWEvent/processLogEvents build one labels map and reuse it, by
+// reference, for every entry{} in the batch. The structured_metadata stage mutates Entry.Labels in place
 // (deleting a label once it's promoted to structured metadata), so without batch.add cloning
 // e.labels first, only the first entry in the batch keeps the field -- every later entry's
 // Extracted copy is built from an already-mutated map and never sees the label at all.
