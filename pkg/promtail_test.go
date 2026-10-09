@@ -39,12 +39,15 @@ func Test_batch_add_SharedLabelsAcrossBatch(t *testing.T) {
 
 	batchSize = defaultBatchSize // large enough that add() never flushes mid-test
 
+	want := sharedLabels.Clone()
+
 	for i, line := range []string{"first event", "second event", "third event"} {
 		err := b.add(context.Background(), entry{sharedLabels, logproto.Entry{
 			Line:      line,
 			Timestamp: time.Now(),
 		}})
 		require.NoError(t, err, "event %d", i)
+		require.Equal(t, want, sharedLabels, "batch.add mutated caller's labels on event %d", i)
 	}
 
 	require.Len(t, b.streams, 1, "all three entries should share the same remaining labels, hence one stream")
