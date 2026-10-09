@@ -63,12 +63,15 @@ func newBatch(ctx context.Context, pClient Client, processingPipeline *LokiStage
 
 func (b *batch) add(ctx context.Context, e entry) error {
 	if b.processor.Size() > 0 {
+		// Clone to survive mutation downstream
+		labels := e.labels.Clone()
+
 		// Apply pipeline stages to entry
 		stageEntry := stages.Entry{
 			Extracted: map[string]interface{}{},
-			Entry:     api.Entry{Labels: e.labels, Entry: e.entry},
+			Entry:     api.Entry{Labels: labels, Entry: e.entry},
 		}
-		for labelName, labelValue := range e.labels {
+		for labelName, labelValue := range labels {
 			stageEntry.Extracted[string(labelName)] = string(labelValue)
 		}
 		stageEntry = b.processor.Process(stageEntry)

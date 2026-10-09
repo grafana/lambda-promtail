@@ -49,7 +49,7 @@ func Test_parseCWEvent(t *testing.T) {
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
-			batchSize = 131072 // Set large enough we don't send to promtail
+			batchSize = defaultBatchSize // Set large enough we don't send to promtail
 			keepStream = tt.keepStream
 			err := parseCWEvent(context.Background(), tt.b, cwevent)
 			if err != nil {
