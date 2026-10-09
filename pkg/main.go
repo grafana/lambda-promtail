@@ -30,7 +30,7 @@ const (
 
 	invalidExtraLabelsError = "invalid value for environment variable EXTRA_LABELS. Expected a comma separated list with an even number of entries. "
 
-	defaultBatchSize = 131062 // see BATCH_SIZE in doc/sources/lambda-promtail-reference.md
+	defaultBatchSize = 131072 // see BATCH_SIZE in doc/sources/lambda-promtail-reference.md
 )
 
 var (
