@@ -3,6 +3,7 @@ package main
 import (
 	"testing"
 
+	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/model/relabel"
 	"github.com/stretchr/testify/require"
 
@@ -125,5 +126,23 @@ func TestParseRelabelConfigs(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// Process input is built by ranging a Go map, whose order is randomized.
+// Without builder.Sort() the source_labels lookup intermittently misses and
+// the rule silently no-ops.
+func TestApplyRelabelConfigsSortsLabels(t *testing.T) {
+	var err error
+	relabelConfigs, err = parseRelabelConfigs(
+		`[{"source_labels":["_tst"],"regex":"^/svc/(.+)$","target_label":"out"}]`)
+	require.NoError(t, err)
+	t.Cleanup(func() { relabelConfigs = nil })
+
+	in := model.LabelSet{"_tst": "/svc/foo", "a": "1", "b": "2"}
+
+	for i := 0; i < 100; i++ {
+		require.Equal(t, model.LabelValue("foo"),
+			applyRelabelConfigs(in)["out"], "iteration %d", i)
 	}
 }
