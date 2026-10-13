@@ -77,7 +77,7 @@ or CloudFormation:
 aws cloudformation create-stack --stack-name lambda-promtail-stack --template-body file://template.yaml --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM --region us-east-2 --parameters ParameterKey=WriteAddress,ParameterValue=https://your-loki-url/loki/api/v1/push ParameterKey=Username,ParameterValue=<basic-auth-username> ParameterKey=Password,ParameterValue=<basic-auth-pw> ParameterKey=BearerToken,ParameterValue=<bearer-token> ParameterKey=LambdaPromtailImage,ParameterValue=<ecr-repo>:<tag> ParameterKey=ExtraLabels,ParameterValue="name1,value1,name2,value2" ParameterKey=TenantID,ParameterValue=<value> ParameterKey=SkipTlsVerify,ParameterValue="false"
 ```
 
-**NOTE:** To use CloudFormation, you must build the docker image with `docker build . -f tools/lambda-promtail/Dockerfile` from the root of the Loki repository, upload it to an ECR, and pass it as the `LambdaPromtailImage` parameter to cloudformation.
+**NOTE:** To use CloudFormation, you must build the Docker image with `docker build . -f tools/lambda-promtail/Dockerfile` from the root of the Loki repository, upload it to an ECR, and pass it as the `LambdaPromtailImage` parameter to cloudformation. Grafana has stopped publishing Docker images. 
 
 # Appendix
 
