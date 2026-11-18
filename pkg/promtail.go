@@ -167,7 +167,15 @@ func (b *batch) resetBatch() {
 }
 
 func (c *promtailClient) sendToPromtail(ctx context.Context, b *batch) error {
-	buf, _, err := b.encode()
+	// Nothing to send, e.g. every record in the event was filtered out, or
+	// batch.add already flushed the batch when it crossed batchSize. Loki rejects
+	// a push without streams with 422, which would fail the invocation and make
+	// the event source retry the same records.
+	if len(b.streams) == 0 {
+		return nil
+	}
+
+	buf, entries, err := b.encode()
 	if err != nil {
 		return err
 	}
@@ -192,11 +200,23 @@ func (c *promtailClient) sendToPromtail(ctx context.Context, b *batch) error {
 	}
 
 	if err != nil {
+		// A non-retryable 4xx will be rejected again on every retry of the event
+		// (e.g. by a Kinesis or SQS event source), which blocks the records behind it.
+		if c.config.dropPermanentErrors && isPermanentError(status) {
+			level.Warn(*c.log).Log("msg", "dropping batch rejected with a non-retryable status", "status", status, "entries", entries, "err", err) // nolint:errcheck
+			return nil
+		}
 		level.Error(*c.log).Log("err", fmt.Errorf("failed to send logs! %s", err)) // nolint:errcheck
 		return err
 	}
 
 	return nil
+}
+
+// isPermanentError reports whether a push response status will not succeed on
+// retry: any 4xx except 429 (rate limited).
+func isPermanentError(status int) bool {
+	return status/100 == 4 && status != 429
 }
 
 func (c *promtailClient) send(ctx context.Context, buf []byte) (int, error) {

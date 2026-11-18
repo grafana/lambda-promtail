@@ -29,6 +29,7 @@ Lambda Promtail reads its configuration from the following environment variables
 | `RELABEL_CONFIGS` | empty | A JSON array of relabel rules in Prometheus `relabel_configs` format. Refer to [Relabeling configuration](#relabeling-configuration). |
 | `LOKI_STAGE_CONFIGS` | empty | A JSON array of Loki pipeline stages to apply to each entry. Refer to [Pipeline stages](#pipeline-stages). |
 | `PIPELINE_TIMEOUT` | `1s` | The timeout for processing a single log line through the pipeline stages, as a Go duration string. |
+| `DROP_PERMANENT_ERRORS` | `false` | Set to `true` to log and drop a batch that Loki rejects with a non-retryable `4xx` status (any `4xx` except `429`), for example an entry that is too old or a request that is too large, instead of failing the invocation. With a Kinesis or SQS trigger, a failed invocation makes AWS retry the same batch, which can block the shard or queue. `429`, `5xx` and network errors are still returned and retried. |
 | `SKIP_TLS_VERIFY` | `false` | Set to `true` to skip TLS certificate verification. Use for development only. |
 | `PRINT_LOG_LINE` | `true` | Set to `false` to stop the function from printing each parsed log line before forwarding it. |
 | `LOG_LEVEL` | `info` | The log level for the function's own logs. |

@@ -44,6 +44,7 @@ var (
 	dropLabels                                                               []model.LabelName
 	skipTLSVerify                                                            bool
 	printLogLine                                                             bool
+	dropPermanentErrors                                                      bool
 	relabelConfigs                                                           []*relabel.Config
 )
 
@@ -128,6 +129,10 @@ func setupArguments(ctx context.Context, secretFetcher secretFetcher) {
 	if strings.EqualFold(os.Getenv("PRINT_LOG_LINE"), "false") {
 		printLogLine = false
 	}
+
+	// Anything other than case-insensitive 'true' is treated as 'false'.
+	dropPermanentErrors = strings.EqualFold(os.Getenv("DROP_PERMANENT_ERRORS"), "true")
+	fmt.Println("drop permanent errors: ", dropPermanentErrors)
 	s3Clients = make(map[string]*s3.Client)
 
 	promConfigs, err := parseRelabelConfigs(os.Getenv("RELABEL_CONFIGS"))
@@ -249,6 +254,7 @@ func handler(ctx context.Context, ev map[string]interface{}) error {
 			timeout:       timeout,
 			skipTLSVerify: skipTLSVerify,
 		},
+		dropPermanentErrors: dropPermanentErrors,
 	}, log)
 
 	lokiStageConfigs, err := ParsePipelineConfigs(os.Getenv("LOKI_STAGE_CONFIGS"), *log, metrics)

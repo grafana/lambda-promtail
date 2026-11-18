@@ -253,6 +253,7 @@ resource "aws_lambda_function" "this" {
       TENANT_ID                = var.tenant_id
       SKIP_TLS_VERIFY          = var.skip_tls_verify
       PRINT_LOG_LINE           = var.print_log_line
+      DROP_PERMANENT_ERRORS    = var.drop_permanent_errors ? "true" : "false"
     }
   }
 
