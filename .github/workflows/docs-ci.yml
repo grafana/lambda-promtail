@@ -27,7 +27,7 @@ jobs:
       checks: write
       pull-requests: write
       security-events: write
-    uses: grafana/writers-toolkit/.github/workflows/docs-ci.yml@main
+    uses: grafana/writers-toolkit/.github/workflows/docs-ci.yml@7b99659fe08f97476f08e29182ab5a3f4f5979cf # main
     with:
       build: true
       build-website-directory: content/docs/lambda-promtail
