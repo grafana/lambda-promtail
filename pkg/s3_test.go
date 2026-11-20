@@ -259,6 +259,40 @@ func Test_getLabels(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "s3_hourly_flow_logs",
+			args: args{
+				record: events.S3EventRecord{
+					AWSRegion: "us-east-1",
+					S3: events.S3Entity{
+						Bucket: events.S3Bucket{
+							Name: "vpc_logs_test",
+							OwnerIdentity: events.S3UserIdentity{
+								PrincipalID: "test",
+							},
+						},
+						Object: events.S3Object{
+							Key: "my-bucket/AWSLogs/123456789012/vpcflowlogs/us-east-1/2026/08/06/20/123456789012_vpcflowlogs_us-east-1_fl-1234abcd_20260806T2020Z_fe123456.log.gz",
+						},
+					},
+				},
+			},
+			want: map[string]string{
+				"account_id":    "123456789012",
+				"bucket":        "vpc_logs_test",
+				"bucket_owner":  "test",
+				"bucket_region": "us-east-1",
+				"hour":			 "20",
+				"day":           "06",
+				"key":           "my-bucket/AWSLogs/123456789012/vpcflowlogs/us-east-1/2026/08/06/20/123456789012_vpcflowlogs_us-east-1_fl-1234abcd_20260806T2020Z_fe123456.log.gz",
+				"month":         "08",
+				"region":        "us-east-1",
+				"src":           "fl-1234abcd",
+				"type":          FlowLogType,
+				"year":          "2026",
+			},
+			wantErr: false,
+		},
+		{
 			name: "cloudtrail_digest_logs",
 			args: args{
 				record: events.S3EventRecord{
