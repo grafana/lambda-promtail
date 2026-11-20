@@ -24,6 +24,9 @@ type promtailClient struct {
 type promtailClientConfig struct {
 	backoff *backoff.Config
 	http    *httpClientConfig
+	// dropPermanentErrors drops a batch that Loki rejects with a non-retryable
+	// 4xx status (anything but 429) instead of returning an error.
+	dropPermanentErrors bool
 }
 
 type httpClientConfig struct {

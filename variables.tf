@@ -126,6 +126,12 @@ variable "print_log_line" {
   default     = "true"
 }
 
+variable "drop_permanent_errors" {
+  type        = bool
+  description = "Whether to log and drop a batch that Loki rejects with a non-retryable 4xx status (anything but 429) instead of failing the invocation, so that a Kinesis or SQS trigger does not retry it forever."
+  default     = false
+}
+
 variable "extra_labels" {
   type        = string
   description = "Comma separated list of extra labels, in the format 'name1,value1,name2,value2,...,nameN,valueN' to add to entries forwarded by lambda-promtail."
