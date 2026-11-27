@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -39,6 +40,10 @@ type parserConfig struct {
 	timestampType string
 	// how many lines or jsonToken to skip at the beginning of the file
 	skipHeaderCount int
+	// optional; reports whether a line at the top of the file is a header line.
+	// Header lines are skipped until the first line for which it returns false.
+	// Use it when the number of header lines depends on the file format.
+	isHeaderLine func(lineNumber int, line string) bool
 	// key of the metadata label to use as a value for the__aws_<logType>_owner label
 	ownerLabelKey string
 }
@@ -76,6 +81,9 @@ var (
 	// CloudFront
 	// source https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/AccessLogs.html#AccessLogsFileNaming
 	// example: example-prefix/EMLARXS9EXAMPLE.2019-11-14-20.RT4KCN4SGK9.gz
+	// Standard logging (v2) delivered to S3 uses the same file name, under a
+	// configurable suffix path, for example:
+	// AWSLogs/111122223333/CloudFront/EMLARXS9EXAMPLE/2024/11/14/20/EMLARXS9EXAMPLE.2024-11-14-20.1a2b3c4d.gz
 	// AWS WAF logs
 	// source: https://docs.aws.amazon.com/waf/latest/developerguide/logging-s3.html
 	// format: aws-waf-logs-suffix[/prefix]/AWSLogs/aws-account-id/WAFLogs/region/webacl-name/year/month/day/hour/minute/aws-account-id_waflogs_region_webacl-name_timestamp_hash.log.gz
@@ -135,7 +143,7 @@ var (
 			timestampRegex:  cloudfrontTimestampRegex,
 			timestampFormat: "2006-01-02\x0915:04:05",
 			timestampType:   "string",
-			skipHeaderCount: 2,
+			isHeaderLine:    isCloudfrontHeaderLine,
 		},
 		WafLogType: {
 			logTypeLabel:   "s3_waf",
@@ -171,6 +179,20 @@ var (
 		},
 	}
 )
+
+// isCloudfrontHeaderLine reports whether a line at the top of a CloudFront
+// standard log file is a header line. The first line is always a header, and
+// so is every following line that starts with "#":
+//   - legacy standard logs start with "#Version: 1.0" and "#Fields: ...";
+//   - standard logging (v2) in the plain format starts with one line that lists
+//     the tab-separated field names ("date", "time", "x-edge-location", ...),
+//     with no "#".
+//
+// A fixed count of two header lines drops the first log record of every v2
+// plain file.
+func isCloudfrontHeaderLine(lineNumber int, line string) bool {
+	return lineNumber == 1 || strings.HasPrefix(line, "#")
+}
 
 func getS3Client(ctx context.Context, region string) (*s3.Client, error) {
 	var s3Client *s3.Client
@@ -242,11 +264,18 @@ func parseS3Log(ctx context.Context, b *batch, labels map[string]string, obj io.
 	}
 
 	var lineCount int
+	inHeader := parser.isHeaderLine != nil
 	for scanner.Scan() {
 		logLine := scanner.Text()
 		lineCount++
 		if lineCount <= parser.skipHeaderCount {
 			continue
+		}
+		if inHeader {
+			if parser.isHeaderLine(lineCount, logLine) {
+				continue
+			}
+			inHeader = false
 		}
 		if printLogLine {
 			fmt.Println(logLine)

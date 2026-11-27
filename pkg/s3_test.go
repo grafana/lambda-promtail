@@ -424,6 +424,38 @@ func Test_getLabels(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "s3_cloudfront_v2",
+			args: args{
+				record: events.S3EventRecord{
+					AWSRegion: "us-east-1",
+					S3: events.S3Entity{
+						Bucket: events.S3Bucket{
+							Name: "cloudfront_logs_test",
+							OwnerIdentity: events.S3UserIdentity{
+								PrincipalID: "test",
+							},
+						},
+						Object: events.S3Object{
+							Key: "AWSLogs/111122223333/CloudFront/E2K2LNL5N3WR51/2024/11/14/20/E2K2LNL5N3WR51.2024-11-14-20.1a2b3c4d.gz",
+						},
+					},
+				},
+			},
+			want: map[string]string{
+				"bucket":        "cloudfront_logs_test",
+				"bucket_owner":  "test",
+				"bucket_region": "us-east-1",
+				"day":           "14",
+				"key":           "AWSLogs/111122223333/CloudFront/E2K2LNL5N3WR51/2024/11/14/20/E2K2LNL5N3WR51.2024-11-14-20.1a2b3c4d.gz",
+				"month":         "11",
+				"prefix":        "AWSLogs/111122223333/CloudFront/E2K2LNL5N3WR51/2024/11/14/20",
+				"src":           "E2K2LNL5N3WR51",
+				"type":          CloudFrontLogType,
+				"year":          "2024",
+			},
+			wantErr: false,
+		},
+		{
 			name: "s3_url_encoded_1",
 			args: args{
 				record: events.S3EventRecord{
@@ -655,7 +687,9 @@ func Test_parseS3Log(t *testing.T) {
 		expectedLen        int
 		expectedStream     string
 		expectedTimestamps []time.Time
-		expectedLog        string
+		// when set, the exact number of entries expected in expectedStream
+		expectedEntries int
+		expectedLog     string
 	}{
 		{
 			name: "vpcflowlogs",
@@ -790,7 +824,33 @@ func Test_parseS3Log(t *testing.T) {
 				time.Date(2023, time.April, 26, 7, 25, 11, 0, time.UTC),
 				time.Date(2023, time.April, 26, 7, 25, 11, 0, time.UTC),
 			},
-			wantErr: false,
+			expectedEntries: 2,
+			wantErr:         false,
+		},
+		{
+			// standard logging (v2), plain format: one header line without "#"
+			name: "cloudfrontlogs_v2_plain",
+			args: args{
+				batchSize: 131072, // Set large enough we don't try and send to promtail
+				filename:  "../testdata/cloudfront_v2_plain.log.gz",
+				b: &batch{
+					streams:   map[string]*logproto.Stream{},
+					processor: process,
+				},
+				labels: map[string]string{
+					"type":   CloudFrontLogType,
+					"src":    "DISTRIBUTIONID",
+					"prefix": "path/to/file",
+				},
+			},
+			expectedLen:    1,
+			expectedStream: `{__aws_log_type="s3_cloudfront", __aws_s3_cloudfront="DISTRIBUTIONID", __aws_s3_cloudfront_owner="path/to/file"}`,
+			expectedTimestamps: []time.Time{
+				time.Date(2024, time.November, 14, 22, 30, 25, 0, time.UTC),
+				time.Date(2024, time.November, 14, 22, 30, 27, 0, time.UTC),
+			},
+			expectedEntries: 2,
+			wantErr:         false,
 		},
 		{
 			name: "waflogs",
@@ -926,6 +986,9 @@ func Test_parseS3Log(t *testing.T) {
 				stream, ok := tt.args.b.streams[tt.expectedStream]
 				require.True(t, ok, "batch does not contain stream: %s", tt.expectedStream)
 				require.NotNil(t, stream)
+				if tt.expectedEntries > 0 {
+					require.Len(t, stream.Entries, tt.expectedEntries)
+				}
 				// check timestamps are as expected
 				if tt.expectedTimestamps != nil {
 					for i, entry := range stream.Entries {
